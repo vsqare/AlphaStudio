@@ -7,26 +7,16 @@ import android.graphics.Typeface;
 import android.graphics.drawable.GradientDrawable;
 import android.view.Gravity;
 import android.view.View;
-import android.widget.HorizontalScrollView;
-import android.widget.LinearLayout;
-import android.widget.ScrollView;
-import android.widget.TextView;
+import android.widget.*;
 
 public class MainActivity extends Activity {
 
-    // =========================
-    // COLORS
-    // =========================
-
-    private static final int BG = Color.rgb(18, 18, 20);
-    private static final int PANEL = Color.rgb(27, 27, 31);
-    private static final int PANEL_2 = Color.rgb(35, 35, 41);
-
-    private static final int TEXT = Color.rgb(245, 245, 247);
-    private static final int MUTED = Color.rgb(155, 155, 165);
-
-    private static final int ACCENT = Color.rgb(82, 120, 255);
-    private static final int GREEN = Color.rgb(70, 190, 125);
+    private final int BG = Color.rgb(18, 18, 20);
+    private final int PANEL = Color.rgb(29, 29, 34);
+    private final int PANEL2 = Color.rgb(38, 38, 44);
+    private final int TEXT = Color.WHITE;
+    private final int MUTED = Color.rgb(160, 160, 170);
+    private final int ACCENT = Color.rgb(82, 120, 255);
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -35,428 +25,466 @@ public class MainActivity extends Activity {
         getWindow().setStatusBarColor(BG);
         getWindow().setNavigationBarColor(BG);
 
-        createDashboard();
+        showDashboard();
     }
 
-    // =========================
-    // DASHBOARD
-    // =========================
+    private void showDashboard() {
 
-    private void createDashboard() {
+        LinearLayout root = baseLayout();
 
-        LinearLayout root = new LinearLayout(this);
-        root.setOrientation(LinearLayout.VERTICAL);
-        root.setBackgroundColor(BG);
+        TextView title = text("AlphaStudio", 22, TEXT);
+        title.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
+        root.addView(title, margin(20, 25, 20, 5));
 
-        // ---------------------------------
-        // TOP BAR
-        // ---------------------------------
-
-        LinearLayout topBar = new LinearLayout(this);
-        topBar.setOrientation(LinearLayout.HORIZONTAL);
-        topBar.setGravity(Gravity.CENTER_VERTICAL);
-        topBar.setPadding(18, 14, 14, 14);
-        topBar.setBackgroundColor(PANEL);
-
-        TextView logo = createText("A", 22, TEXT);
-        logo.setGravity(Gravity.CENTER);
-        logo.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
-        logo.setBackground(createRounded(12, ACCENT));
-
-        topBar.addView(
-                logo,
-                new LinearLayout.LayoutParams(46, 46)
-        );
-
-        LinearLayout titleContainer = new LinearLayout(this);
-        titleContainer.setOrientation(LinearLayout.VERTICAL);
-        titleContainer.setPadding(13, 0, 0, 0);
-
-        TextView appName = createText(
-                "AlphaStudio",
-                19,
-                TEXT
-        );
-
-        appName.setTypeface(
-                Typeface.DEFAULT,
-                Typeface.BOLD
-        );
-
-        TextView appSubtitle = createText(
-                "Android IDE",
-                12,
+        TextView sub = text(
+                "Professional Android IDE",
+                13,
                 MUTED
         );
+        root.addView(sub, margin(20, 0, 20, 25));
 
-        titleContainer.addView(appName);
-        titleContainer.addView(appSubtitle);
-
-        LinearLayout.LayoutParams titleParams =
-                new LinearLayout.LayoutParams(
-                        0,
-                        -2,
-                        1
-                );
-
-        topBar.addView(titleContainer, titleParams);
-
-        TextView menu = createText(
-                "⋮",
-                28,
-                TEXT
-        );
-
-        menu.setGravity(Gravity.CENTER);
-
-        topBar.addView(
-                menu,
-                new LinearLayout.LayoutParams(42, 46)
-        );
-
-        root.addView(topBar);
-
-        // ---------------------------------
-        // SCROLL CONTENT
-        // ---------------------------------
-
-        ScrollView scrollView = new ScrollView(this);
-
-        scrollView.setFillViewport(true);
-        scrollView.setVerticalScrollBarEnabled(false);
-
-        LinearLayout content = new LinearLayout(this);
-
-        content.setOrientation(
-                LinearLayout.VERTICAL
-        );
-
-        content.setPadding(
-                20,
-                25,
-                20,
-                30
-        );
-
-        // ---------------------------------
-        // WELCOME
-        // ---------------------------------
-
-        TextView welcome = createText(
-                "Welcome back",
-                28,
-                TEXT
-        );
-
-        welcome.setTypeface(
-                Typeface.DEFAULT,
-                Typeface.BOLD
-        );
-
-        content.addView(welcome);
-
-        TextView description = createText(
-                "Build professional Android apps directly from your phone.",
-                14,
-                MUTED
-        );
-
-        addMargin(
-                content,
-                description,
-                0,
-                6,
-                0,
-                22
-        );
-
-        // ---------------------------------
-        // NEW / OPEN PROJECT
-        // ---------------------------------
-
-        LinearLayout projectRow =
-                new LinearLayout(this);
-
-        projectRow.setOrientation(
-                LinearLayout.HORIZONTAL
-        );
-
-        TextView newProject = createActionCard(
-                "＋",
-                "New Project",
-                "Create Android app",
+        Button newProject = button(
+                "＋   New Project",
                 ACCENT
         );
 
-        TextView openProject = createActionCard(
-                "↗",
-                "Open Project",
-                "Open existing project",
-                PANEL_2
-        );
+        newProject.setOnClickListener(v -> showNewProject());
 
-        LinearLayout.LayoutParams leftParams =
-                new LinearLayout.LayoutParams(
-                        0,
-                        -2,
-                        1
-                );
-
-        leftParams.setMargins(0, 0, 6, 0);
-
-        LinearLayout.LayoutParams rightParams =
-                new LinearLayout.LayoutParams(
-                        0,
-                        -2,
-                        1
-                );
-
-        rightParams.setMargins(6, 0, 0, 0);
-
-        projectRow.addView(
+        root.addView(
                 newProject,
-                leftParams
+                margin(20, 0, 20, 12)
         );
 
-        projectRow.addView(
+        Button openProject = button(
+                "↗   Open Project",
+                PANEL2
+        );
+
+        openProject.setOnClickListener(v ->
+                Toast.makeText(
+                        this,
+                        "Open Project coming next",
+                        Toast.LENGTH_SHORT
+                ).show()
+        );
+
+        root.addView(
                 openProject,
-                rightParams
+                margin(20, 0, 20, 25)
         );
 
-        content.addView(projectRow);
-
-        // ---------------------------------
-        // RECENT PROJECTS
-        // ---------------------------------
-
-        TextView recentTitle = createText(
+        TextView recent = text(
                 "Recent Projects",
                 20,
                 TEXT
         );
 
-        recentTitle.setTypeface(
+        recent.setTypeface(
                 Typeface.DEFAULT,
                 Typeface.BOLD
         );
 
-        addMargin(
-                content,
-                recentTitle,
-                0,
-                30,
-                0,
-                12
+        root.addView(
+                recent,
+                margin(20, 0, 20, 12)
         );
 
-        TextView project1 = createProjectCard(
-                "▣  AlphaStudio",
-                "com.alphastudio  •  Android App"
+        root.addView(
+                projectCard(
+                        "AlphaStudio",
+                        "com.alphastudio"
+                ),
+                margin(20, 0, 20, 8)
         );
 
-        content.addView(project1);
-
-        TextView project2 = createProjectCard(
-                "▣  My First App",
-                "com.example.myapp  •  Android App"
+        root.addView(
+                projectCard(
+                        "My First App",
+                        "com.example.myapp"
+                ),
+                margin(20, 0, 20, 20)
         );
 
-        addMargin(
-                content,
-                project2,
-                0,
-                8,
-                0,
-                0
-        );
-
-        // ---------------------------------
-        // QUICK ACTIONS
-        // ---------------------------------
-
-        TextView quickTitle = createText(
-                "Quick Actions",
-                20,
-                TEXT
-        );
-
-        quickTitle.setTypeface(
-                Typeface.DEFAULT,
-                Typeface.BOLD
-        );
-
-        addMargin(
-                content,
-                quickTitle,
-                0,
-                30,
-                0,
-                12
-        );
-
-        HorizontalScrollView horizontalScroll =
-                new HorizontalScrollView(this);
-
-        horizontalScroll.setHorizontalScrollBarEnabled(
-                false
-        );
-
-        LinearLayout quickRow =
-                new LinearLayout(this);
-
-        quickRow.setOrientation(
-                LinearLayout.HORIZONTAL
-        );
-
-        quickRow.addView(
-                createQuickCard("▣", "Build APK")
-        );
-
-        quickRow.addView(
-                createQuickCard("⌘", "GitHub")
-        );
-
-        quickRow.addView(
-                createQuickCard("⚙", "SDK Manager")
-        );
-
-        quickRow.addView(
-                createQuickCard("▤", "Terminal")
-        );
-
-        horizontalScroll.addView(quickRow);
-
-        content.addView(horizontalScroll);
-
-        // ---------------------------------
-        // ENVIRONMENT
-        // ---------------------------------
-
-        TextView environmentTitle = createText(
+        TextView environment = text(
                 "Environment",
                 20,
                 TEXT
         );
 
-        environmentTitle.setTypeface(
+        environment.setTypeface(
                 Typeface.DEFAULT,
                 Typeface.BOLD
         );
 
-        addMargin(
-                content,
-                environmentTitle,
-                0,
-                30,
-                0,
-                12
+        root.addView(
+                environment,
+                margin(20, 0, 20, 12)
         );
-
-        content.addView(
-                createStatusCard(
-                        "●",
-                        "Android SDK",
-                        "Ready"
-                )
-        );
-
-        content.addView(
-                createStatusCard(
-                        "●",
-                        "Gradle",
-                        "Ready"
-                )
-        );
-
-        content.addView(
-                createStatusCard(
-                        "●",
-                        "GitHub",
-                        "Connected"
-                )
-        );
-
-        // ---------------------------------
-        // FINISH
-        // ---------------------------------
-
-        scrollView.addView(content);
 
         root.addView(
-                scrollView,
-                new LinearLayout.LayoutParams(
-                        -1,
-                        0,
-                        1
-                )
+                statusCard("●  Android SDK", "Ready"),
+                margin(20, 0, 20, 8)
+        );
+
+        root.addView(
+                statusCard("●  Gradle", "Ready"),
+                margin(20, 0, 20, 8)
+        );
+
+        root.addView(
+                statusCard("●  GitHub", "Connected"),
+                margin(20, 0, 20, 20)
         );
 
         setContentView(root);
     }
 
-    // ==================================================
-    // ACTION CARD
-    // ==================================================
+    // =========================
+    // NEW PROJECT SCREEN
+    // =========================
 
-    private TextView createActionCard(
-            String icon,
-            String title,
-            String subtitle,
-            int backgroundColor
-    ) {
+    private void showNewProject() {
 
-        TextView card = createText(
-                icon + "\n\n" +
-                title + "\n" +
-                subtitle,
-                14,
+        LinearLayout root = baseLayout();
+
+        TextView back = text(
+                "‹  Back",
+                16,
+                MUTED
+        );
+
+        back.setPadding(20, 20, 20, 20);
+
+        back.setOnClickListener(v ->
+                showDashboard()
+        );
+
+        root.addView(back);
+
+        TextView heading = text(
+                "Create New Project",
+                27,
                 TEXT
         );
 
-        card.setPadding(
-                18,
-                18,
-                18,
-                18
+        heading.setTypeface(
+                Typeface.DEFAULT,
+                Typeface.BOLD
         );
 
-        card.setBackground(
-                createRounded(
-                        16,
-                        backgroundColor
+        root.addView(
+                heading,
+                margin(20, 15, 20, 6)
+        );
+
+        TextView description = text(
+                "Configure your Android application",
+                14,
+                MUTED
+        );
+
+        root.addView(
+                description,
+                margin(20, 0, 20, 25)
+        );
+
+        // Project Name
+
+        root.addView(
+                label("Project Name"),
+                margin(20, 0, 20, 6)
+        );
+
+        EditText projectName = input(
+                "MyApplication"
+        );
+
+        root.addView(
+                projectName,
+                margin(20, 0, 20, 18)
+        );
+
+        // Package Name
+
+        root.addView(
+                label("Package Name"),
+                margin(20, 0, 20, 6)
+        );
+
+        EditText packageName = input(
+                "com.example.myapplication"
+        );
+
+        root.addView(
+                packageName,
+                margin(20, 0, 20, 18)
+        );
+
+        // Language
+
+        root.addView(
+                label("Language"),
+                margin(20, 0, 20, 6)
+        );
+
+        Spinner language = new Spinner(this);
+
+        String[] languages = {
+                "Java",
+                "Kotlin"
+        };
+
+        language.setAdapter(
+                new ArrayAdapter<String>(
+                        this,
+                        android.R.layout.simple_spinner_dropdown_item,
+                        languages
                 )
         );
 
-        card.setOnClickListener(
-                new View.OnClickListener() {
-
-                    @Override
-                    public void onClick(View view) {
-
-                        // New Project / Open Project
-                        // functionality will be added here.
-
-                    }
-                }
+        root.addView(
+                language,
+                margin(20, 0, 20, 18)
         );
 
-        return card;
+        // Minimum SDK
+
+        root.addView(
+                label("Minimum SDK"),
+                margin(20, 0, 20, 6)
+        );
+
+        Spinner sdk = new Spinner(this);
+
+        String[] sdks = {
+                "Android 7.0 (API 24)",
+                "Android 8.0 (API 26)",
+                "Android 10 (API 29)",
+                "Android 12 (API 31)",
+                "Android 15 (API 35)"
+        };
+
+        sdk.setAdapter(
+                new ArrayAdapter<String>(
+                        this,
+                        android.R.layout.simple_spinner_dropdown_item,
+                        sdks
+                )
+        );
+
+        root.addView(
+                sdk,
+                margin(20, 0, 20, 25)
+        );
+
+        Button create = button(
+                "Create Project",
+                ACCENT
+        );
+
+        create.setOnClickListener(v -> {
+
+            String name =
+                    projectName.getText()
+                            .toString()
+                            .trim();
+
+            String pkg =
+                    packageName.getText()
+                            .toString()
+                            .trim();
+
+            if (name.isEmpty()) {
+                projectName.setError(
+                        "Enter project name"
+                );
+                return;
+            }
+
+            if (pkg.isEmpty()) {
+                packageName.setError(
+                        "Enter package name"
+                );
+                return;
+            }
+
+            Toast.makeText(
+                    this,
+                    "Project configuration saved",
+                    Toast.LENGTH_SHORT
+            ).show();
+
+            showProjectEditor(name, pkg);
+        });
+
+        root.addView(
+                create,
+                margin(20, 0, 20, 20)
+        );
+
+        setContentView(root);
     }
 
-    // ==================================================
-    // PROJECT CARD
-    // ==================================================
+    // =========================
+    // PROJECT EDITOR PREVIEW
+    // =========================
 
-    private TextView createProjectCard(
-            String title,
-            String subtitle
+    private void showProjectEditor(
+            String projectName,
+            String packageName
     ) {
 
-        TextView card = createText(
-                title + "\n" + subtitle,
-                14,
+        LinearLayout root = baseLayout();
+
+        TextView title = text(
+                "‹  " + projectName,
+                21,
                 TEXT
         );
+
+        title.setTypeface(
+                Typeface.DEFAULT,
+                Typeface.BOLD
+        );
+
+        title.setPadding(20, 20, 20, 20);
+
+        title.setOnClickListener(v ->
+                showDashboard()
+        );
+
+        root.addView(title);
+
+        TextView info = text(
+                "Project Explorer\n\n" +
+                "📁 app\n" +
+                "   ├── 📁 manifests\n" +
+                "   ├── 📁 java\n" +
+                "   └── 📁 res\n\n" +
+                "Package:\n" +
+                packageName,
+                16,
+                TEXT
+        );
+
+        info.setPadding(25, 25, 25, 25);
+        info.setBackground(
+                round(16, PANEL)
+        );
+
+        root.addView(
+                info,
+                margin(20, 10, 20, 20)
+        );
+
+        TextView coming = text(
+                "Code Editor\n\n" +
+                "The professional code editor will be added next.",
+                15,
+                MUTED
+        );
+
+        coming.setPadding(20, 20, 20, 20);
+        coming.setBackground(
+                round(16, PANEL)
+        );
+
+        root.addView(
+                coming,
+                margin(20, 0, 20, 20)
+        );
+
+        setContentView(root);
+    }
+
+    // =========================
+    // UI HELPERS
+    // =========================
+
+    private LinearLayout baseLayout() {
+
+        LinearLayout layout =
+                new LinearLayout(this);
+
+        layout.setOrientation(
+                LinearLayout.VERTICAL
+        );
+
+        layout.setBackgroundColor(BG);
+
+        ScrollView scroll =
+                new ScrollView(this);
+
+        scroll.addView(layout);
+
+        // Keep normal layout for current screen
+        return layout;
+    }
+
+    private TextView label(String value) {
+
+        TextView t =
+                text(value, 14, TEXT);
+
+        t.setTypeface(
+                Typeface.DEFAULT,
+                Typeface.BOLD
+        );
+
+        return t;
+    }
+
+    private EditText input(String hint) {
+
+        EditText e = new EditText(this);
+
+        e.setHint(hint);
+        e.setHintTextColor(MUTED);
+        e.setTextColor(TEXT);
+        e.setTextSize(15);
+        e.setSingleLine(true);
+        e.setPadding(16, 14, 16, 14);
+
+        e.setBackground(
+                round(12, PANEL)
+        );
+
+        return e;
+    }
+
+    private Button button(
+            String value,
+            int color
+    ) {
+
+        Button b = new Button(this);
+
+        b.setText(value);
+        b.setTextColor(Color.WHITE);
+        b.setTextSize(15);
+        b.setAllCaps(false);
+        b.setPadding(10, 8, 10, 8);
+
+        b.setBackground(
+                round(14, color)
+        );
+
+        return b;
+    }
+
+    private View projectCard(
+            String name,
+            String pkg
+    ) {
+
+        TextView card =
+                text(
+                        "▣  " + name +
+                        "\n     " + pkg +
+                        "  •  Android App",
+                        15,
+                        TEXT
+                );
 
         card.setPadding(
                 18,
@@ -466,211 +494,108 @@ public class MainActivity extends Activity {
         );
 
         card.setBackground(
-                createRounded(
-                        14,
-                        PANEL
-                )
-        );
-
-        card.setOnClickListener(
-                new View.OnClickListener() {
-
-                    @Override
-                    public void onClick(View view) {
-
-                        // Project editor will open here.
-
-                    }
-                }
+                round(14, PANEL)
         );
 
         return card;
     }
 
-    // ==================================================
-    // QUICK ACTION CARD
-    // ==================================================
-
-    private TextView createQuickCard(
-            String icon,
-            String title
-    ) {
-
-        TextView card = createText(
-                icon + "\n\n" + title,
-                14,
-                TEXT
-        );
-
-        card.setGravity(
-                Gravity.CENTER
-        );
-
-        card.setPadding(
-                15,
-                15,
-                15,
-                15
-        );
-
-        card.setBackground(
-                createRounded(
-                        14,
-                        PANEL
-                )
-        );
-
-        LinearLayout.LayoutParams params =
-                new LinearLayout.LayoutParams(
-                        125,
-                        105
-                );
-
-        params.setMargins(
-                0,
-                0,
-                12,
-                0
-        );
-
-        card.setLayoutParams(params);
-
-        card.setOnClickListener(
-                new View.OnClickListener() {
-
-                    @Override
-                    public void onClick(View view) {
-
-                        // Quick action functionality
-                        // will be added later.
-
-                    }
-                }
-        );
-
-        return card;
-    }
-
-    // ==================================================
-    // STATUS CARD
-    // ==================================================
-
-    private TextView createStatusCard(
-            String icon,
+    private View statusCard(
             String name,
             String status
     ) {
 
-        TextView card = createText(
-                icon + "   " +
-                name +
-                "                         " +
-                status,
-                14,
-                TEXT
+        LinearLayout card =
+                new LinearLayout(this);
+
+        card.setOrientation(
+                LinearLayout.HORIZONTAL
+        );
+
+        card.setGravity(
+                Gravity.CENTER_VERTICAL
         );
 
         card.setPadding(
+                18,
                 16,
-                17,
-                16,
-                17
+                18,
+                16
         );
 
         card.setBackground(
-                createRounded(
-                        12,
-                        PANEL
-                )
+                round(12, PANEL)
         );
 
-        LinearLayout.LayoutParams params =
+        TextView n =
+                text(name, 14, TEXT);
+
+        TextView s =
+                text(status, 13, Color.rgb(70, 190, 125));
+
+        LinearLayout.LayoutParams p =
                 new LinearLayout.LayoutParams(
-                        -1,
-                        -2
+                        0,
+                        -2,
+                        1
                 );
 
-        params.setMargins(
-                0,
-                0,
-                0,
-                8
-        );
-
-        card.setLayoutParams(params);
+        card.addView(n, p);
+        card.addView(s);
 
         return card;
     }
 
-    // ==================================================
-    // TEXT HELPER
-    // ==================================================
-
-    private TextView createText(
-            String text,
+    private TextView text(
+            String value,
             float size,
             int color
     ) {
 
-        TextView view = new TextView(this);
+        TextView t =
+                new TextView(this);
 
-        view.setText(text);
-        view.setTextSize(size);
-        view.setTextColor(color);
+        t.setText(value);
+        t.setTextSize(size);
+        t.setTextColor(color);
 
-        return view;
+        return t;
     }
 
-    // ==================================================
-    // BACKGROUND HELPER
-    // ==================================================
-
-    private GradientDrawable createRounded(
+    private GradientDrawable round(
             int radius,
             int color
     ) {
 
-        GradientDrawable drawable =
+        GradientDrawable d =
                 new GradientDrawable();
 
-        drawable.setColor(color);
+        d.setColor(color);
+        d.setCornerRadius(radius);
 
-        drawable.setCornerRadius(
-                radius
-        );
-
-        return drawable;
+        return d;
     }
 
-    // ==================================================
-    // MARGIN HELPER
-    // ==================================================
-
-    private void addMargin(
-            LinearLayout parent,
-            View view,
+    private LinearLayout.LayoutParams margin(
             int left,
             int top,
             int right,
             int bottom
     ) {
 
-        LinearLayout.LayoutParams params =
+        LinearLayout.LayoutParams p =
                 new LinearLayout.LayoutParams(
                         -1,
                         -2
                 );
 
-        params.setMargins(
+        p.setMargins(
                 left,
                 top,
                 right,
                 bottom
         );
 
-        parent.addView(
-                view,
-                params
-        );
+        return p;
     }
 }
