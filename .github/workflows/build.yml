@@ -25,6 +25,7 @@ jobs:
 
       - name: Install Android SDK
         run: |
+          yes | sdkmanager --licenses || true
           sdkmanager "platform-tools"
           sdkmanager "platforms;android-35"
           sdkmanager "build-tools;35.0.0"
@@ -34,11 +35,25 @@ jobs:
         with:
           gradle-version: '8.10.2'
 
-      - name: Build APK
-        run: gradle assembleDebug
+      - name: Verify Project
+        run: |
+          echo "===== PROJECT ====="
+          find . -maxdepth 3 -type f | sort
+          echo "===== JAVA ====="
+          find app/src -type f | sort
+
+      - name: Build Debug APK
+        run: |
+          gradle --version
+          gradle clean assembleDebug --stacktrace
+
+      - name: Show APK
+        run: |
+          ls -lah app/build/outputs/apk/debug/
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: AlphaStudio-debug
           path: app/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
