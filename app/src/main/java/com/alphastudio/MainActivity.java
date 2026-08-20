@@ -19,6 +19,11 @@ import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.ArrayList;
 
 public class MainActivity extends Activity {
@@ -29,7 +34,7 @@ public class MainActivity extends Activity {
 
     private static final int BG = Color.rgb(16, 17, 20);
     private static final int PANEL = Color.rgb(25, 26, 31);
-    private static final int PANEL2 = Color.rgb(34, 36, 43);
+    private static final int PANEL2 = Color.rgb(35, 36, 43);
     private static final int TEXT = Color.rgb(245, 245, 247);
     private static final int MUTED = Color.rgb(155, 158, 170);
     private static final int ACCENT = Color.rgb(82, 120, 255);
@@ -37,21 +42,24 @@ public class MainActivity extends Activity {
     private static final int RED = Color.rgb(235, 90, 90);
 
     // =====================================================
-    // EDITOR
+    // PROJECT
     // =====================================================
-
-    private EditText editor;
-
-    private String currentFile = "MainActivity.java";
-
-    private String javaCode = "";
-    private String manifestCode = "";
-    private String xmlCode = "";
 
     private String currentProjectName = "MyApplication";
     private String currentPackage = "com.example.myapplication";
+    private String currentFile = "MainActivity.java";
 
-    // Simple editor history
+    private File projectDir;
+    private File javaFile;
+    private File manifestFile;
+    private File xmlFile;
+
+    private EditText editor;
+
+    // =====================================================
+    // HISTORY
+    // =====================================================
+
     private final ArrayList<String> undoStack = new ArrayList<>();
     private final ArrayList<String> redoStack = new ArrayList<>();
 
@@ -78,7 +86,6 @@ public class MainActivity extends Activity {
         LinearLayout root = vertical();
         root.setBackgroundColor(BG);
 
-        // TOP BAR
         LinearLayout top = horizontal();
 
         top.setGravity(Gravity.CENTER_VERTICAL);
@@ -128,17 +135,13 @@ public class MainActivity extends Activity {
                 )
         );
 
-        TextView menu = text("⋮", 28, TEXT);
-        menu.setGravity(Gravity.CENTER);
-
         top.addView(
-                menu,
+                text("⋮", 28, TEXT),
                 new LinearLayout.LayoutParams(42, 46)
         );
 
         root.addView(top);
 
-        // CONTENT
         ScrollView scroll = new ScrollView(this);
 
         LinearLayout content = vertical();
@@ -166,7 +169,7 @@ public class MainActivity extends Activity {
         addMargin(
                 content,
                 text(
-                        "Build Android applications directly from your phone.",
+                        "Build professional Android apps directly from your phone.",
                         14,
                         MUTED
                 ),
@@ -176,8 +179,7 @@ public class MainActivity extends Activity {
                 22
         );
 
-        // ACTIONS
-        LinearLayout actionRow = horizontal();
+        LinearLayout actions = horizontal();
 
         View newProject = actionCard(
                 "＋",
@@ -189,35 +191,36 @@ public class MainActivity extends Activity {
         View openProject = actionCard(
                 "↗",
                 "Open Project",
-                "Open existing project",
+                "Open saved project",
                 PANEL2
         );
 
-        LinearLayout.LayoutParams a =
+        LinearLayout.LayoutParams p1 =
                 new LinearLayout.LayoutParams(
                         0,
                         -2,
                         1
                 );
 
-        a.setMargins(0, 0, 6, 0);
+        p1.setMargins(0, 0, 6, 0);
 
-        LinearLayout.LayoutParams b =
+        LinearLayout.LayoutParams p2 =
                 new LinearLayout.LayoutParams(
                         0,
                         -2,
                         1
                 );
 
-        b.setMargins(6, 0, 0, 0);
+        p2.setMargins(6, 0, 0, 0);
 
-        actionRow.addView(newProject, a);
-        actionRow.addView(openProject, b);
+        actions.addView(newProject, p1);
+        actions.addView(openProject, p2);
 
-        content.addView(actionRow);
+        content.addView(actions);
 
-        // RECENT
-        TextView recent = sectionTitle("Recent Projects");
+        TextView recent = sectionTitle(
+                "Recent Projects"
+        );
 
         addMargin(
                 content,
@@ -228,27 +231,11 @@ public class MainActivity extends Activity {
                 12
         );
 
-        content.addView(
-                projectCard(
-                        "AlphaStudio",
-                        "com.alphastudio"
-                )
-        );
+        addRecentProjects(content);
 
-        addMargin(
-                content,
-                projectCard(
-                        "My First App",
-                        "com.example.myapp"
-                ),
-                0,
-                8,
-                0,
-                0
+        TextView quick = sectionTitle(
+                "Quick Actions"
         );
-
-        // QUICK ACTIONS
-        TextView quick = sectionTitle("Quick Actions");
 
         addMargin(
                 content,
@@ -286,8 +273,9 @@ public class MainActivity extends Activity {
 
         content.addView(quickScroll);
 
-        // ENVIRONMENT
-        TextView env = sectionTitle("Environment");
+        TextView env = sectionTitle(
+                "Environment"
+        );
 
         addMargin(
                 content,
@@ -314,8 +302,8 @@ public class MainActivity extends Activity {
 
         content.addView(
                 statusCard(
-                        "GitHub",
-                        "Connected"
+                        "Project Storage",
+                        "Ready"
                 )
         );
 
@@ -334,7 +322,72 @@ public class MainActivity extends Activity {
     }
 
     // =====================================================
-    // NEW PROJECT
+    // RECENT PROJECTS
+    // =====================================================
+
+    private void addRecentProjects(
+            LinearLayout content
+    ) {
+
+        File root =
+                new File(
+                        getFilesDir(),
+                        "projects"
+                );
+
+        if (!root.exists()) {
+            root.mkdirs();
+        }
+
+        File[] projects =
+                root.listFiles();
+
+        if (projects == null ||
+                projects.length == 0) {
+
+            content.addView(
+                    text(
+                            "No projects yet",
+                            13,
+                            MUTED
+                    )
+            );
+
+            return;
+        }
+
+        for (File dir : projects) {
+
+            if (!dir.isDirectory()) {
+                continue;
+            }
+
+            String name =
+                    dir.getName();
+
+            String pkg =
+                    readText(
+                            new File(
+                                    dir,
+                                    ".package"
+                            )
+                    );
+
+            if (pkg.isEmpty()) {
+                pkg = "Unknown package";
+            }
+
+            content.addView(
+                    projectCard(
+                            name,
+                            pkg
+                    )
+            );
+        }
+    }
+
+    // =====================================================
+    // NEW PROJECT DIALOG
     // =====================================================
 
     private void showNewProjectDialog() {
@@ -352,9 +405,8 @@ public class MainActivity extends Activity {
                 label("Project Name")
         );
 
-        EditText name = input(
-                "MyApplication"
-        );
+        EditText name =
+                input("MyApplication");
 
         box.addView(name);
 
@@ -367,9 +419,10 @@ public class MainActivity extends Activity {
                 0
         );
 
-        EditText pkg = input(
-                "com.example.myapplication"
-        );
+        EditText pkg =
+                input(
+                        "com.example.myapplication"
+                );
 
         box.addView(pkg);
 
@@ -382,12 +435,13 @@ public class MainActivity extends Activity {
                 0
         );
 
-        Spinner language = spinner(
-                new String[]{
-                        "Java",
-                        "Kotlin"
-                }
-        );
+        Spinner language =
+                spinner(
+                        new String[]{
+                                "Java",
+                                "Kotlin"
+                        }
+                );
 
         box.addView(language);
 
@@ -400,21 +454,24 @@ public class MainActivity extends Activity {
                 0
         );
 
-        Spinner sdk = spinner(
-                new String[]{
-                        "Android 7.0 (API 24)",
-                        "Android 8.0 (API 26)",
-                        "Android 10 (API 29)",
-                        "Android 12 (API 31)",
-                        "Android 15 (API 35)"
-                }
-        );
+        Spinner sdk =
+                spinner(
+                        new String[]{
+                                "Android 7.0 (API 24)",
+                                "Android 8.0 (API 26)",
+                                "Android 10 (API 29)",
+                                "Android 12 (API 31)",
+                                "Android 15 (API 35)"
+                        }
+                );
 
         box.addView(sdk);
 
         AlertDialog dialog =
                 new AlertDialog.Builder(this)
-                        .setTitle("Create New Project")
+                        .setTitle(
+                                "Create New Project"
+                        )
                         .setView(box)
                         .setNegativeButton(
                                 "Cancel",
@@ -447,19 +504,23 @@ public class MainActivity extends Activity {
                                                 .toString()
                                                 .trim();
 
-                                if (project.isEmpty()) {
+                                if (!validProjectName(
+                                        project
+                                )) {
 
                                     name.setError(
-                                            "Enter project name"
+                                            "Use letters, numbers or _"
                                     );
 
                                     return;
                                 }
 
-                                if (packageName.isEmpty()) {
+                                if (!validPackage(
+                                        packageName
+                                )) {
 
                                     pkg.setError(
-                                            "Enter package name"
+                                            "Example: com.example.myapp"
                                     );
 
                                     return;
@@ -471,11 +532,20 @@ public class MainActivity extends Activity {
                                 currentPackage =
                                         packageName;
 
-                                createInitialFiles();
+                                if (createProjectFiles()) {
 
-                                dialog.dismiss();
+                                    dialog.dismiss();
 
-                                buildWorkspace();
+                                    buildWorkspace();
+
+                                } else {
+
+                                    Toast.makeText(
+                                            this,
+                                            "Project creation failed",
+                                            Toast.LENGTH_LONG
+                                    ).show();
+                                }
                             }
                     );
                 }
@@ -485,12 +555,196 @@ public class MainActivity extends Activity {
     }
 
     // =====================================================
-    // CREATE INITIAL FILES
+    // REAL PROJECT CREATION
     // =====================================================
 
-    private void createInitialFiles() {
+    private boolean createProjectFiles() {
 
-        javaCode =
+        try {
+
+            File projectsRoot =
+                    new File(
+                            getFilesDir(),
+                            "projects"
+                    );
+
+            if (!projectsRoot.exists()) {
+                projectsRoot.mkdirs();
+            }
+
+            projectDir =
+                    new File(
+                            projectsRoot,
+                            currentProjectName
+                    );
+
+            if (!projectDir.exists()) {
+
+                if (!projectDir.mkdirs()) {
+                    return false;
+                }
+            }
+
+            File app =
+                    new File(
+                            projectDir,
+                            "app"
+                    );
+
+            File src =
+                    new File(
+                            app,
+                            "src/main/java/" +
+                            currentPackage.replace(
+                                    ".",
+                                    "/"
+                            )
+                    );
+
+            File res =
+                    new File(
+                            app,
+                            "src/main/res/layout"
+                    );
+
+            File values =
+                    new File(
+                            app,
+                            "src/main/res/values"
+                    );
+
+            if (!src.mkdirs() &&
+                    !src.exists()) {
+                return false;
+            }
+
+            if (!res.mkdirs() &&
+                    !res.exists()) {
+                return false;
+            }
+
+            if (!values.mkdirs() &&
+                    !values.exists()) {
+                return false;
+            }
+
+            javaFile =
+                    new File(
+                            src,
+                            "MainActivity.java"
+                    );
+
+            manifestFile =
+                    new File(
+                            app,
+                            "src/main/AndroidManifest.xml"
+                    );
+
+            xmlFile =
+                    new File(
+                            res,
+                            "activity_main.xml"
+                    );
+
+            File stringsFile =
+                    new File(
+                            values,
+                            "strings.xml"
+                    );
+
+            File gradleFile =
+                    new File(
+                            app,
+                            "build.gradle"
+                    );
+
+            File rootGradle =
+                    new File(
+                            projectDir,
+                            "build.gradle"
+                    );
+
+            File settings =
+                    new File(
+                            projectDir,
+                            "settings.gradle"
+                    );
+
+            File packageFile =
+                    new File(
+                            projectDir,
+                            ".package"
+                    );
+
+            File projectNameFile =
+                    new File(
+                            projectDir,
+                            ".project"
+                    );
+
+            writeText(
+                    javaFile,
+                    generateJava()
+            );
+
+            writeText(
+                    manifestFile,
+                    generateManifest()
+            );
+
+            writeText(
+                    xmlFile,
+                    generateXml()
+            );
+
+            writeText(
+                    stringsFile,
+                    generateStrings()
+            );
+
+            writeText(
+                    gradleFile,
+                    generateAppGradle()
+            );
+
+            writeText(
+                    rootGradle,
+                    generateRootGradle()
+            );
+
+            writeText(
+                    settings,
+                    generateSettings()
+            );
+
+            writeText(
+                    packageFile,
+                    currentPackage
+            );
+
+            writeText(
+                    projectNameFile,
+                    currentProjectName
+            );
+
+            currentFile =
+                    "MainActivity.java";
+
+            return true;
+
+        } catch (Exception e) {
+
+            return false;
+        }
+    }
+
+    // =====================================================
+    // CODE GENERATORS
+    // =====================================================
+
+    private String generateJava() {
+
+        return
                 "package " +
                 currentPackage +
                 ";\n\n" +
@@ -511,8 +765,11 @@ public class MainActivity extends Activity {
                 "    }\n\n" +
 
                 "}\n";
+    }
 
-        manifestCode =
+    private String generateManifest() {
+
+        return
                 "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n\n" +
 
                 "<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\">\n\n" +
@@ -545,9 +802,12 @@ public class MainActivity extends Activity {
 
                 "    </application>\n\n" +
 
-                "</manifest>";
+                "</manifest>\n";
+    }
 
-        xmlCode =
+    private String generateXml() {
+
+        return
                 "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n\n" +
 
                 "<LinearLayout\n" +
@@ -559,6 +819,8 @@ public class MainActivity extends Activity {
                 "    android:layout_height=\"match_parent\"\n" +
 
                 "    android:orientation=\"vertical\"\n" +
+
+                "    android:gravity=\"center\"\n" +
 
                 "    android:padding=\"24dp\">\n\n" +
 
@@ -572,10 +834,80 @@ public class MainActivity extends Activity {
 
                 "        android:textSize=\"24sp\" />\n\n" +
 
-                "</LinearLayout>";
+                "</LinearLayout>\n";
+    }
 
-        undoStack.clear();
-        redoStack.clear();
+    private String generateStrings() {
+
+        return
+                "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n\n" +
+
+                "<resources>\n" +
+
+                "    <string name=\"app_name\">" +
+                currentProjectName +
+                "</string>\n" +
+
+                "</resources>\n";
+    }
+
+    private String generateAppGradle() {
+
+        return
+                "plugins {\n" +
+                "    id 'com.android.application'\n" +
+                "}\n\n" +
+
+                "android {\n" +
+                "    namespace '" +
+                currentPackage +
+                "'\n" +
+                "    compileSdk 35\n\n" +
+
+                "    defaultConfig {\n" +
+                "        applicationId '" +
+                currentPackage +
+                "'\n" +
+                "        minSdk 24\n" +
+                "        targetSdk 35\n" +
+                "        versionCode 1\n" +
+                "        versionName '1.0'\n" +
+                "    }\n" +
+                "}\n";
+    }
+
+    private String generateRootGradle() {
+
+        return
+                "plugins {\n" +
+                "    id 'com.android.application' version '8.7.3' apply false\n" +
+                "}\n";
+    }
+
+    private String generateSettings() {
+
+        return
+                "pluginManagement {\n" +
+                "    repositories {\n" +
+                "        google()\n" +
+                "        mavenCentral()\n" +
+                "        gradlePluginPortal()\n" +
+                "    }\n" +
+                "}\n\n" +
+
+                "dependencyResolutionManagement {\n" +
+                "    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)\n" +
+                "    repositories {\n" +
+                "        google()\n" +
+                "        mavenCentral()\n" +
+                "    }\n" +
+                "}\n\n" +
+
+                "rootProject.name = '" +
+                currentProjectName +
+                "'\n" +
+
+                "include ':app'\n";
     }
 
     // =====================================================
@@ -583,9 +915,6 @@ public class MainActivity extends Activity {
     // =====================================================
 
     private void buildWorkspace() {
-
-        currentFile =
-                "MainActivity.java";
 
         LinearLayout root = vertical();
         root.setBackgroundColor(BG);
@@ -606,16 +935,20 @@ public class MainActivity extends Activity {
 
         header.setBackgroundColor(PANEL);
 
-        TextView back = text(
-                "‹",
-                34,
-                TEXT
-        );
+        TextView back =
+                text(
+                        "‹",
+                        34,
+                        TEXT
+                );
 
         back.setGravity(Gravity.CENTER);
 
         back.setOnClickListener(
-                v -> buildDashboard()
+                v -> {
+                    saveCurrentFile();
+                    buildDashboard();
+                }
         );
 
         header.addView(
@@ -626,14 +959,22 @@ public class MainActivity extends Activity {
                 )
         );
 
-        LinearLayout projectInfo = vertical();
-        projectInfo.setPadding(8, 0, 0, 0);
+        LinearLayout projectInfo =
+                vertical();
 
-        TextView project = text(
-                currentProjectName,
-                17,
-                TEXT
+        projectInfo.setPadding(
+                8,
+                0,
+                0,
+                0
         );
+
+        TextView project =
+                text(
+                        currentProjectName,
+                        17,
+                        TEXT
+                );
 
         project.setTypeface(
                 Typeface.DEFAULT,
@@ -659,11 +1000,12 @@ public class MainActivity extends Activity {
                 )
         );
 
-        TextView save = text(
-                "💾",
-                19,
-                TEXT
-        );
+        TextView save =
+                text(
+                        "💾",
+                        19,
+                        TEXT
+                );
 
         save.setGravity(Gravity.CENTER);
 
@@ -679,16 +1021,17 @@ public class MainActivity extends Activity {
                 )
         );
 
-        TextView run = text(
-                "▶",
-                18,
-                GREEN
-        );
+        TextView run =
+                text(
+                        "▶",
+                        18,
+                        GREEN
+                );
 
         run.setGravity(Gravity.CENTER);
 
         run.setOnClickListener(
-                v -> showBuildMessage()
+                v -> buildProject()
         );
 
         header.addView(
@@ -705,7 +1048,9 @@ public class MainActivity extends Activity {
         HorizontalScrollView toolbarScroll =
                 new HorizontalScrollView(this);
 
-        toolbarScroll.setHorizontalScrollBarEnabled(false);
+        toolbarScroll.setHorizontalScrollBarEnabled(
+                false
+        );
 
         LinearLayout toolbar = horizontal();
 
@@ -733,7 +1078,7 @@ public class MainActivity extends Activity {
         );
 
         toolbar.addView(
-                tool("▶", "Run")
+                tool("▶", "Build")
         );
 
         toolbarScroll.addView(toolbar);
@@ -743,7 +1088,7 @@ public class MainActivity extends Activity {
         // MAIN
         LinearLayout main = horizontal();
 
-        // EXPLORER
+        // FILE EXPLORER
         LinearLayout explorer = vertical();
 
         explorer.setPadding(
@@ -755,11 +1100,12 @@ public class MainActivity extends Activity {
 
         explorer.setBackgroundColor(PANEL);
 
-        TextView explorerTitle = text(
-                "PROJECT",
-                10,
-                MUTED
-        );
+        TextView explorerTitle =
+                text(
+                        "PROJECT",
+                        10,
+                        MUTED
+                );
 
         explorerTitle.setTypeface(
                 Typeface.DEFAULT,
@@ -769,17 +1115,16 @@ public class MainActivity extends Activity {
         explorer.addView(explorerTitle);
 
         explorer.addView(
-                treeItem("📁 app", 0)
-        );
-
-        explorer.addView(
-                treeItem("📁 manifests", 1)
+                treeItem(
+                        "📁 app",
+                        0
+                )
         );
 
         TextView manifest =
                 treeItem(
                         "📄 AndroidManifest.xml",
-                        2
+                        1
                 );
 
         manifest.setOnClickListener(
@@ -791,7 +1136,10 @@ public class MainActivity extends Activity {
         explorer.addView(manifest);
 
         explorer.addView(
-                treeItem("📁 java", 1)
+                treeItem(
+                        "📁 java",
+                        1
+                )
         );
 
         TextView java =
@@ -809,11 +1157,17 @@ public class MainActivity extends Activity {
         explorer.addView(java);
 
         explorer.addView(
-                treeItem("📁 res", 1)
+                treeItem(
+                        "📁 res",
+                        1
+                )
         );
 
         explorer.addView(
-                treeItem("📁 layout", 2)
+                treeItem(
+                        "📁 layout",
+                        2
+                )
         );
 
         TextView xml =
@@ -833,20 +1187,23 @@ public class MainActivity extends Activity {
         main.addView(
                 explorer,
                 new LinearLayout.LayoutParams(
-                        185,
+                        190,
                         -1
                 )
         );
 
-        // EDITOR AREA
-        LinearLayout editorArea = vertical();
+        // EDITOR
+        LinearLayout editorArea =
+                vertical();
+
         editorArea.setBackgroundColor(BG);
 
-        // TABS
         HorizontalScrollView tabsScroll =
                 new HorizontalScrollView(this);
 
-        tabsScroll.setHorizontalScrollBarEnabled(false);
+        tabsScroll.setHorizontalScrollBarEnabled(
+                false
+        );
 
         LinearLayout tabs = horizontal();
 
@@ -873,8 +1230,8 @@ public class MainActivity extends Activity {
 
         editorArea.addView(tabsScroll);
 
-        // EDITOR
-        editor = new EditText(this);
+        editor =
+                new EditText(this);
 
         editor.setGravity(
                 Gravity.TOP | Gravity.START
@@ -883,12 +1240,18 @@ public class MainActivity extends Activity {
         editor.setTextSize(13);
 
         editor.setTextColor(
-                Color.rgb(225, 228, 235)
+                Color.rgb(
+                        225,
+                        228,
+                        235
+                )
         );
 
         editor.setHintTextColor(MUTED);
 
-        editor.setTypeface(Typeface.MONOSPACE);
+        editor.setTypeface(
+                Typeface.MONOSPACE
+        );
 
         editor.setInputType(
                 InputType.TYPE_CLASS_TEXT |
@@ -922,7 +1285,8 @@ public class MainActivity extends Activity {
         );
 
         // STATUS
-        LinearLayout status = horizontal();
+        LinearLayout status =
+                horizontal();
 
         status.setGravity(
                 Gravity.CENTER_VERTICAL
@@ -952,7 +1316,7 @@ public class MainActivity extends Activity {
 
         status.addView(
                 text(
-                        "Java / XML",
+                        currentFile,
                         10,
                         MUTED
                 )
@@ -982,12 +1346,14 @@ public class MainActivity extends Activity {
     }
 
     // =====================================================
-    // FILE MANAGEMENT
+    // OPEN FILE
     // =====================================================
 
-    private void openFile(String file) {
+    private void openFile(
+            String file
+    ) {
 
-        saveEditorToMemory();
+        saveCurrentFile();
 
         currentFile = file;
 
@@ -1003,23 +1369,10 @@ public class MainActivity extends Activity {
             return;
         }
 
-        String content = "";
+        File file = getCurrentFile();
 
-        if (currentFile.equals(
-                "MainActivity.java")) {
-
-            content = javaCode;
-
-        } else if (currentFile.equals(
-                "AndroidManifest.xml")) {
-
-            content = manifestCode;
-
-        } else if (currentFile.equals(
-                "activity_main.xml")) {
-
-            content = xmlCode;
-        }
+        String content =
+                readText(file);
 
         editor.setText(content);
 
@@ -1028,46 +1381,67 @@ public class MainActivity extends Activity {
         );
     }
 
-    private void saveEditorToMemory() {
+    private File getCurrentFile() {
+
+        if (currentFile.equals(
+                "MainActivity.java"
+        )) {
+
+            return javaFile;
+
+        } else if (currentFile.equals(
+                "AndroidManifest.xml"
+        )) {
+
+            return manifestFile;
+
+        } else {
+
+            return xmlFile;
+        }
+    }
+
+    // =====================================================
+    // SAVE
+    // =====================================================
+
+    private void saveCurrentFile() {
 
         if (editor == null) {
             return;
         }
 
-        String value =
+        File file =
+                getCurrentFile();
+
+        if (file == null) {
+            return;
+        }
+
+        if (writeText(
+                file,
                 editor.getText()
-                        .toString();
+                        .toString()
+        )) {
 
-        if (currentFile.equals(
-                "MainActivity.java")) {
+            Toast.makeText(
+                    this,
+                    currentFile + " saved",
+                    Toast.LENGTH_SHORT
+            ).show();
 
-            javaCode = value;
+        } else {
 
-        } else if (currentFile.equals(
-                "AndroidManifest.xml")) {
-
-            manifestCode = value;
-
-        } else if (currentFile.equals(
-                "activity_main.xml")) {
-
-            xmlCode = value;
+            Toast.makeText(
+                    this,
+                    "Save failed",
+                    Toast.LENGTH_SHORT
+            ).show();
         }
     }
 
-    private void saveCurrentFile() {
-
-        saveEditorToMemory();
-
-        Toast.makeText(
-                this,
-                currentFile + " saved",
-                Toast.LENGTH_SHORT
-        ).show();
-    }
-
     // =====================================================
-    // SAFE UNDO
+    // UNDO / REDO
     // =====================================================
 
     private void saveUndoState() {
@@ -1091,11 +1465,8 @@ public class MainActivity extends Activity {
 
     private void undoEdit() {
 
-        if (editor == null) {
-            return;
-        }
-
-        if (undoStack.isEmpty()) {
+        if (editor == null ||
+                undoStack.isEmpty()) {
 
             Toast.makeText(
                     this,
@@ -1106,11 +1477,10 @@ public class MainActivity extends Activity {
             return;
         }
 
-        String current =
+        redoStack.add(
                 editor.getText()
-                        .toString();
-
-        redoStack.add(current);
+                        .toString()
+        );
 
         String previous =
                 undoStack.remove(
@@ -1126,11 +1496,8 @@ public class MainActivity extends Activity {
 
     private void redoEdit() {
 
-        if (editor == null) {
-            return;
-        }
-
-        if (redoStack.isEmpty()) {
+        if (editor == null ||
+                redoStack.isEmpty()) {
 
             Toast.makeText(
                     this,
@@ -1141,11 +1508,10 @@ public class MainActivity extends Activity {
             return;
         }
 
-        String current =
+        undoStack.add(
                 editor.getText()
-                        .toString();
-
-        undoStack.add(current);
+                        .toString()
+        );
 
         String next =
                 redoStack.remove(
@@ -1165,7 +1531,7 @@ public class MainActivity extends Activity {
 
     private void showSearch() {
 
-        final EditText search =
+        EditText search =
                 input(
                         "Search current file"
                 );
@@ -1203,12 +1569,12 @@ public class MainActivity extends Activity {
                                     return;
                                 }
 
-                                String content =
+                                String source =
                                         editor.getText()
                                                 .toString();
 
                                 int position =
-                                        content.indexOf(
+                                        source.indexOf(
                                                 query
                                         );
 
@@ -1221,12 +1587,6 @@ public class MainActivity extends Activity {
                                             position +
                                             query.length()
                                     );
-
-                                    Toast.makeText(
-                                            this,
-                                            "Found",
-                                            Toast.LENGTH_SHORT
-                                    ).show();
 
                                 } else {
 
@@ -1245,7 +1605,28 @@ public class MainActivity extends Activity {
     }
 
     // =====================================================
-    // TOOLBAR
+    // BUILD
+    // =====================================================
+
+    private void buildProject() {
+
+        saveCurrentFile();
+
+        new AlertDialog.Builder(this)
+                .setTitle("Build")
+                .setMessage(
+                        "Project files are saved successfully.\n\n" +
+                        "Real Gradle execution will be connected in the next build-system stage."
+                )
+                .setPositiveButton(
+                        "OK",
+                        null
+                )
+                .show();
+    }
+
+    // =====================================================
+    // TOOL
     // =====================================================
 
     private TextView tool(
@@ -1295,12 +1676,6 @@ public class MainActivity extends Activity {
                     v -> showSearch()
             );
 
-        } else if (title.equals("Save")) {
-
-            t.setOnClickListener(
-                    v -> saveCurrentFile()
-            );
-
         } else if (title.equals("Undo")) {
 
             t.setOnClickListener(
@@ -1313,10 +1688,16 @@ public class MainActivity extends Activity {
                     v -> redoEdit()
             );
 
-        } else if (title.equals("Run")) {
+        } else if (title.equals("Save")) {
 
             t.setOnClickListener(
-                    v -> showBuildMessage()
+                    v -> saveCurrentFile()
+            );
+
+        } else if (title.equals("Build")) {
+
+            t.setOnClickListener(
+                    v -> buildProject()
             );
         }
 
@@ -1377,28 +1758,7 @@ public class MainActivity extends Activity {
     }
 
     // =====================================================
-    // BUILD MESSAGE
-    // =====================================================
-
-    private void showBuildMessage() {
-
-        saveCurrentFile();
-
-        new AlertDialog.Builder(this)
-                .setTitle("Build Project")
-                .setMessage(
-                        "AlphaStudio editor is ready.\n\n" +
-                        "The real Gradle build engine will be connected in the next stage."
-                )
-                .setPositiveButton(
-                        "OK",
-                        null
-                )
-                .show();
-    }
-
-    // =====================================================
-    // DASHBOARD CARDS
+    // UI CARDS
     // =====================================================
 
     private View actionCard(
@@ -1473,17 +1833,14 @@ public class MainActivity extends Activity {
                 v -> {
 
                     if (title.equals(
-                            "New Project")) {
+                            "New Project"
+                    )) {
 
                         showNewProjectDialog();
 
                     } else {
 
-                        Toast.makeText(
-                                this,
-                                "Open Project will be connected next",
-                                Toast.LENGTH_SHORT
-                        ).show();
+                        showOpenProjectDialog();
                     }
                 }
         );
@@ -1552,11 +1909,15 @@ public class MainActivity extends Activity {
         card.setOnClickListener(
                 v -> {
 
-                    currentProjectName = name;
-                    currentPackage = pkg;
-
-                    createInitialFiles();
-                    buildWorkspace();
+                    openProject(
+                            new File(
+                                    new File(
+                                            getFilesDir(),
+                                            "projects"
+                                    ),
+                                    name
+                            )
+                    );
                 }
         );
 
@@ -1616,7 +1977,8 @@ public class MainActivity extends Activity {
             String value
     ) {
 
-        LinearLayout card = horizontal();
+        LinearLayout card =
+                horizontal();
 
         card.setGravity(
                 Gravity.CENTER_VERTICAL
@@ -1694,6 +2056,219 @@ public class MainActivity extends Activity {
     }
 
     // =====================================================
+    // OPEN PROJECT
+    // =====================================================
+
+    private void showOpenProjectDialog() {
+
+        File root =
+                new File(
+                        getFilesDir(),
+                        "projects"
+                );
+
+        if (!root.exists()) {
+            root.mkdirs();
+        }
+
+        File[] dirs =
+                root.listFiles();
+
+        final ArrayList<String> names =
+                new ArrayList<>();
+
+        if (dirs != null) {
+
+            for (File dir : dirs) {
+
+                if (dir.isDirectory()) {
+                    names.add(
+                            dir.getName()
+                    );
+                }
+            }
+        }
+
+        if (names.isEmpty()) {
+
+            new AlertDialog.Builder(this)
+                    .setTitle(
+                            "Open Project"
+                    )
+                    .setMessage(
+                            "No saved projects found."
+                    )
+                    .setPositiveButton(
+                            "OK",
+                            null
+                    )
+                    .show();
+
+            return;
+        }
+
+        new AlertDialog.Builder(this)
+                .setTitle(
+                        "Open Project"
+                )
+                .setItems(
+                        names.toArray(
+                                new String[0]
+                        ),
+                        (dialog, which) -> {
+
+                            File selected =
+                                    new File(
+                                            root,
+                                            names.get(which)
+                                    );
+
+                            openProject(selected);
+                        }
+                )
+                .setNegativeButton(
+                        "Cancel",
+                        null
+                )
+                .show();
+    }
+
+    private void openProject(
+            File dir
+    ) {
+
+        if (dir == null ||
+                !dir.exists()) {
+
+            Toast.makeText(
+                    this,
+                    "Project not found",
+                    Toast.LENGTH_SHORT
+            ).show();
+
+            return;
+        }
+
+        currentProjectName =
+                readText(
+                        new File(
+                                dir,
+                                ".project"
+                        )
+                );
+
+        currentPackage =
+                readText(
+                        new File(
+                                dir,
+                                ".package"
+                        )
+                );
+
+        if (currentProjectName.isEmpty()) {
+            currentProjectName =
+                    dir.getName();
+        }
+
+        if (currentPackage.isEmpty()) {
+            currentPackage =
+                    "com.example.myapplication";
+        }
+
+        projectDir = dir;
+
+        javaFile =
+                findJavaFile(dir);
+
+        manifestFile =
+                new File(
+                        dir,
+                        "app/src/main/AndroidManifest.xml"
+                );
+
+        xmlFile =
+                new File(
+                        dir,
+                        "app/src/main/res/layout/activity_main.xml"
+                );
+
+        if (javaFile == null) {
+
+            Toast.makeText(
+                    this,
+                    "MainActivity.java not found",
+                    Toast.LENGTH_SHORT
+            ).show();
+
+            return;
+        }
+
+        currentFile =
+                "MainActivity.java";
+
+        buildWorkspace();
+    }
+
+    private File findJavaFile(
+            File dir
+    ) {
+
+        File[] found =
+                findFiles(
+                        dir,
+                        "MainActivity.java"
+                );
+
+        if (found.length > 0) {
+            return found[0];
+        }
+
+        return null;
+    }
+
+    private File[] findFiles(
+            File dir,
+            String filename
+    ) {
+
+        ArrayList<File> result =
+                new ArrayList<>();
+
+        File[] files =
+                dir.listFiles();
+
+        if (files == null) {
+            return new File[0];
+        }
+
+        for (File f : files) {
+
+            if (f.isDirectory()) {
+
+                File[] nested =
+                        findFiles(
+                                f,
+                                filename
+                        );
+
+                for (File n : nested) {
+                    result.add(n);
+                }
+
+            } else if (
+                    f.getName().equals(filename)
+            ) {
+
+                result.add(f);
+            }
+        }
+
+        return result.toArray(
+                new File[0]
+        );
+    }
+
+    // =====================================================
     // TREE
     // =====================================================
 
@@ -1720,7 +2295,105 @@ public class MainActivity extends Activity {
     }
 
     // =====================================================
-    // COMMON HELPERS
+    // VALIDATION
+    // =====================================================
+
+    private boolean validProjectName(
+            String value
+    ) {
+
+        return value.matches(
+                "[A-Za-z][A-Za-z0-9_]*"
+        );
+    }
+
+    private boolean validPackage(
+            String value
+    ) {
+
+        return value.matches(
+                "[a-zA-Z_][a-zA-Z0-9_]*(\\.[a-zA-Z_][a-zA-Z0-9_]*)+"
+        );
+    }
+
+    // =====================================================
+    // FILE IO
+    // =====================================================
+
+    private boolean writeText(
+            File file,
+            String content
+    ) {
+
+        try {
+
+            File parent =
+                    file.getParentFile();
+
+            if (parent != null &&
+                    !parent.exists()) {
+
+                parent.mkdirs();
+            }
+
+            FileWriter writer =
+                    new FileWriter(file);
+
+            writer.write(content);
+            writer.flush();
+            writer.close();
+
+            return true;
+
+        } catch (IOException e) {
+
+            return false;
+        }
+    }
+
+    private String readText(
+            File file
+    ) {
+
+        if (file == null ||
+                !file.exists()) {
+
+            return "";
+        }
+
+        StringBuilder result =
+                new StringBuilder();
+
+        try {
+
+            BufferedReader reader =
+                    new BufferedReader(
+                            new FileReader(file)
+                    );
+
+            String line;
+
+            while (
+                    (line = reader.readLine())
+                            != null
+            ) {
+
+                result.append(line);
+                result.append("\n");
+            }
+
+            reader.close();
+
+        } catch (IOException e) {
+
+            return "";
+        }
+
+        return result.toString();
+    }
+
+    // =====================================================
+    // HELPERS
     // =====================================================
 
     private TextView sectionTitle(
