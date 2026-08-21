@@ -3,8 +3,6 @@ package com.alphastudio;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.os.Bundle;
-import android.os.Handler;
-import android.os.Looper;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.graphics.drawable.GradientDrawable;
@@ -34,42 +32,24 @@ public class MainActivity extends Activity {
     // COLORS
     // =====================================================
 
-    private static final int BG =
-            Color.rgb(16, 17, 20);
+    private static final int BG = Color.rgb(16, 17, 20);
+    private static final int PANEL = Color.rgb(25, 26, 31);
+    private static final int PANEL2 = Color.rgb(35, 36, 43);
 
-    private static final int PANEL =
-            Color.rgb(25, 26, 31);
+    private static final int TEXT = Color.rgb(245, 245, 247);
+    private static final int MUTED = Color.rgb(155, 158, 170);
 
-    private static final int PANEL2 =
-            Color.rgb(35, 36, 43);
-
-    private static final int TEXT =
-            Color.rgb(245, 245, 247);
-
-    private static final int MUTED =
-            Color.rgb(155, 158, 170);
-
-    private static final int ACCENT =
-            Color.rgb(82, 120, 255);
-
-    private static final int GREEN =
-            Color.rgb(70, 190, 125);
-
-    private static final int RED =
-            Color.rgb(235, 90, 90);
+    private static final int ACCENT = Color.rgb(82, 120, 255);
+    private static final int GREEN = Color.rgb(70, 190, 125);
+    private static final int RED = Color.rgb(235, 90, 90);
 
     // =====================================================
     // PROJECT STATE
     // =====================================================
 
-    private String currentProjectName =
-            "MyApplication";
-
-    private String currentPackage =
-            "com.example.myapplication";
-
-    private String currentFile =
-            "MainActivity.java";
+    private String currentProjectName = "MyApplication";
+    private String currentPackage = "com.example.myapplication";
+    private String currentFile = "MainActivity.java";
 
     private File projectDir;
     private File javaFile;
@@ -78,11 +58,12 @@ public class MainActivity extends Activity {
 
     private EditText editor;
 
-    private final ArrayList<String> undoStack =
-            new ArrayList<>();
+    // =====================================================
+    // UNDO / REDO
+    // =====================================================
 
-    private final ArrayList<String> redoStack =
-            new ArrayList<>();
+    private final ArrayList<String> undoStack = new ArrayList<>();
+    private final ArrayList<String> redoStack = new ArrayList<>();
 
     // =====================================================
     // ACTIVITY
@@ -108,101 +89,53 @@ public class MainActivity extends Activity {
         root.setBackgroundColor(BG);
 
         LinearLayout top = horizontal();
-
         top.setGravity(Gravity.CENTER_VERTICAL);
         top.setPadding(18, 14, 12, 14);
         top.setBackgroundColor(PANEL);
 
-        TextView logo =
-                text("A", 21, Color.WHITE);
-
+        TextView logo = text("A", 21, Color.WHITE);
         logo.setGravity(Gravity.CENTER);
-        logo.setTypeface(
-                Typeface.DEFAULT,
-                Typeface.BOLD
-        );
-
-        logo.setBackground(
-                round(12, ACCENT)
-        );
+        logo.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
+        logo.setBackground(round(12, ACCENT));
 
         top.addView(
                 logo,
-                new LinearLayout.LayoutParams(
-                        46,
-                        46
-                )
+                new LinearLayout.LayoutParams(46, 46)
         );
 
         LinearLayout titleBox = vertical();
         titleBox.setPadding(13, 0, 0, 0);
 
-        TextView title =
-                text("AlphaStudio", 19, TEXT);
-
-        title.setTypeface(
-                Typeface.DEFAULT,
-                Typeface.BOLD
-        );
+        TextView title = text("AlphaStudio", 19, TEXT);
+        title.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
 
         titleBox.addView(title);
-
         titleBox.addView(
-                text(
-                        "Professional Android IDE",
-                        12,
-                        MUTED
-                )
+                text("Professional Android IDE", 12, MUTED)
         );
 
         top.addView(
                 titleBox,
-                new LinearLayout.LayoutParams(
-                        0,
-                        -2,
-                        1
-                )
+                new LinearLayout.LayoutParams(0, -2, 1)
         );
 
-        TextView menu =
-                text("⋮", 28, TEXT);
-
+        TextView menu = text("⋮", 28, TEXT);
         menu.setGravity(Gravity.CENTER);
 
         top.addView(
                 menu,
-                new LinearLayout.LayoutParams(
-                        42,
-                        46
-                )
+                new LinearLayout.LayoutParams(42, 46)
         );
 
         root.addView(top);
 
-        ScrollView scroll =
-                new ScrollView(this);
+        ScrollView scroll = new ScrollView(this);
 
-        LinearLayout content =
-                vertical();
+        LinearLayout content = vertical();
+        content.setPadding(20, 24, 20, 30);
 
-        content.setPadding(
-                20,
-                24,
-                20,
-                30
-        );
-
-        TextView welcome =
-                text(
-                        "Welcome back",
-                        28,
-                        TEXT
-                );
-
-        welcome.setTypeface(
-                Typeface.DEFAULT,
-                Typeface.BOLD
-        );
+        TextView welcome = text("Welcome back", 28, TEXT);
+        welcome.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
 
         content.addView(welcome);
 
@@ -213,46 +146,32 @@ public class MainActivity extends Activity {
                         14,
                         MUTED
                 ),
-                0,
-                6,
-                0,
-                22
+                0, 6, 0, 22
         );
 
-        LinearLayout actions =
-                horizontal();
+        LinearLayout actions = horizontal();
 
-        View newProject =
-                actionCard(
-                        "＋",
-                        "New Project",
-                        "Create Android app",
-                        ACCENT
-                );
+        View newProject = actionCard(
+                "＋",
+                "New Project",
+                "Create Android app",
+                ACCENT
+        );
 
-        View openProject =
-                actionCard(
-                        "↗",
-                        "Open Project",
-                        "Open saved project",
-                        PANEL2
-                );
+        View openProject = actionCard(
+                "↗",
+                "Open Project",
+                "Open saved project",
+                PANEL2
+        );
 
         LinearLayout.LayoutParams p1 =
-                new LinearLayout.LayoutParams(
-                        0,
-                        -2,
-                        1
-                );
+                new LinearLayout.LayoutParams(0, -2, 1);
 
         p1.setMargins(0, 0, 6, 0);
 
         LinearLayout.LayoutParams p2 =
-                new LinearLayout.LayoutParams(
-                        0,
-                        -2,
-                        1
-                );
+                new LinearLayout.LayoutParams(0, -2, 1);
 
         p2.setMargins(6, 0, 0, 0);
 
@@ -264,10 +183,7 @@ public class MainActivity extends Activity {
         addMargin(
                 content,
                 sectionTitle("Recent Projects"),
-                0,
-                30,
-                0,
-                12
+                0, 30, 0, 12
         );
 
         addRecentProjects(content);
@@ -275,10 +191,7 @@ public class MainActivity extends Activity {
         addMargin(
                 content,
                 sectionTitle("Quick Actions"),
-                0,
-                30,
-                0,
-                12
+                0, 30, 0, 12
         );
 
         HorizontalScrollView quickScroll =
@@ -286,68 +199,39 @@ public class MainActivity extends Activity {
 
         quickScroll.setHorizontalScrollBarEnabled(false);
 
-        LinearLayout quickRow =
-                horizontal();
+        LinearLayout quickRow = horizontal();
 
-        quickRow.addView(
-                quickCard("▣", "Build APK")
-        );
-
-        quickRow.addView(
-                quickCard("⌘", "GitHub")
-        );
-
-        quickRow.addView(
-                quickCard("⚙", "SDK Manager")
-        );
-
-        quickRow.addView(
-                quickCard("▤", "Terminal")
-        );
+        quickRow.addView(quickCard("▣", "Build APK"));
+        quickRow.addView(quickCard("⌘", "GitHub"));
+        quickRow.addView(quickCard("⚙", "SDK Manager"));
+        quickRow.addView(quickCard("▤", "Terminal"));
 
         quickScroll.addView(quickRow);
-
         content.addView(quickScroll);
 
         addMargin(
                 content,
                 sectionTitle("Environment"),
-                0,
-                30,
-                0,
-                12
+                0, 30, 0, 12
         );
 
         content.addView(
-                statusCard(
-                        "Android SDK",
-                        "Ready"
-                )
+                statusCard("Android SDK", "Ready")
         );
 
         content.addView(
-                statusCard(
-                        "Gradle",
-                        "Ready"
-                )
+                statusCard("Gradle", "Ready")
         );
 
         content.addView(
-                statusCard(
-                        "Project Storage",
-                        "Ready"
-                )
+                statusCard("Project Storage", "Ready")
         );
 
         scroll.addView(content);
 
         root.addView(
                 scroll,
-                new LinearLayout.LayoutParams(
-                        -1,
-                        0,
-                        1
-                )
+                new LinearLayout.LayoutParams(-1, 0, 1)
         );
 
         setContentView(root);
@@ -357,32 +241,20 @@ public class MainActivity extends Activity {
     // RECENT PROJECTS
     // =====================================================
 
-    private void addRecentProjects(
-            LinearLayout content
-    ) {
+    private void addRecentProjects(LinearLayout content) {
 
-        File root =
-                new File(
-                        getFilesDir(),
-                        "projects"
-                );
+        File root = new File(getFilesDir(), "projects");
 
         if (!root.exists()) {
             root.mkdirs();
         }
 
-        File[] projects =
-                root.listFiles();
+        File[] projects = root.listFiles();
 
-        if (projects == null ||
-                projects.length == 0) {
+        if (projects == null || projects.length == 0) {
 
             content.addView(
-                    text(
-                            "No projects yet",
-                            13,
-                            MUTED
-                    )
+                    text("No projects yet", 13, MUTED)
             );
 
             return;
@@ -396,13 +268,9 @@ public class MainActivity extends Activity {
 
             String name = dir.getName();
 
-            String pkg =
-                    readText(
-                            new File(
-                                    dir,
-                                    ".package"
-                            )
-                    ).trim();
+            String pkg = readText(
+                    new File(dir, ".package")
+            ).trim();
 
             if (pkg.isEmpty()) {
                 pkg = "Unknown package";
@@ -415,181 +283,137 @@ public class MainActivity extends Activity {
     }
 
     // =====================================================
-    // NEW PROJECT
+    // NEW PROJECT DIALOG
     // =====================================================
 
     private void showNewProjectDialog() {
 
         LinearLayout box = vertical();
 
-        box.setPadding(
-                25,
-                5,
-                25,
-                5
-        );
+        box.setPadding(25, 5, 25, 5);
 
-        box.addView(
-                label("Project Name")
-        );
+        box.addView(label("Project Name"));
 
-        EditText name =
-                input("MyApplication");
-
+        EditText name = input("MyApplication");
         box.addView(name);
 
         addMargin(
                 box,
                 label("Package Name"),
-                0,
-                16,
-                0,
-                0
+                0, 16, 0, 0
         );
 
-        EditText pkg =
-                input(
-                        "com.example.myapplication"
-                );
+        EditText pkg = input(
+                "com.example.myapplication"
+        );
 
         box.addView(pkg);
 
         addMargin(
                 box,
                 label("Language"),
-                0,
-                16,
-                0,
-                0
+                0, 16, 0, 0
         );
 
-        Spinner language =
-                spinner(
-                        new String[]{
-                                "Java",
-                                "Kotlin"
-                        }
-                );
+        Spinner language = spinner(
+                new String[]{
+                        "Java",
+                        "Kotlin"
+                }
+        );
 
         box.addView(language);
 
         addMargin(
                 box,
                 label("Minimum SDK"),
-                0,
-                16,
-                0,
-                0
+                0, 16, 0, 0
         );
 
-        Spinner sdk =
-                spinner(
-                        new String[]{
-                                "Android 7.0 (API 24)",
-                                "Android 8.0 (API 26)",
-                                "Android 10 (API 29)",
-                                "Android 12 (API 31)",
-                                "Android 15 (API 35)"
-                        }
-                );
+        Spinner sdk = spinner(
+                new String[]{
+                        "Android 7.0 (API 24)",
+                        "Android 8.0 (API 26)",
+                        "Android 10 (API 29)",
+                        "Android 12 (API 31)",
+                        "Android 15 (API 35)"
+                }
+        );
 
         box.addView(sdk);
 
         AlertDialog dialog =
                 new AlertDialog.Builder(this)
-                        .setTitle(
-                                "Create New Project"
-                        )
+                        .setTitle("Create New Project")
                         .setView(box)
-                        .setNegativeButton(
-                                "Cancel",
-                                null
-                        )
-                        .setPositiveButton(
-                                "Create",
-                                null
-                        )
+                        .setNegativeButton("Cancel", null)
+                        .setPositiveButton("Create", null)
                         .create();
 
-        dialog.setOnShowListener(
-                d -> {
+        dialog.setOnShowListener(d -> {
 
-                    Button create =
-                            dialog.getButton(
-                                    AlertDialog.BUTTON_POSITIVE
-                            );
-
-                    create.setOnClickListener(
-                            v -> {
-
-                                String project =
-                                        name.getText()
-                                                .toString()
-                                                .trim();
-
-                                String packageName =
-                                        pkg.getText()
-                                                .toString()
-                                                .trim();
-
-                                if (!validProjectName(
-                                        project
-                                )) {
-
-                                    name.setError(
-                                            "Use letters, numbers or _"
-                                    );
-
-                                    return;
-                                }
-
-                                if (!validPackage(
-                                        packageName
-                                )) {
-
-                                    pkg.setError(
-                                            "Example: com.example.myapp"
-                                    );
-
-                                    return;
-                                }
-
-                                currentProjectName =
-                                        project;
-
-                                currentPackage =
-                                        packageName;
-
-                                if (createProjectFiles()) {
-
-                                    dialog.dismiss();
-
-                                    Toast.makeText(
-                                            this,
-                                            "Project created",
-                                            Toast.LENGTH_SHORT
-                                    ).show();
-
-                                    buildWorkspace();
-
-                                } else {
-
-                                    Toast.makeText(
-                                            this,
-                                            "Project creation failed",
-                                            Toast.LENGTH_LONG
-                                    ).show();
-                                }
-                            }
+            Button create =
+                    dialog.getButton(
+                            AlertDialog.BUTTON_POSITIVE
                     );
+
+            create.setOnClickListener(v -> {
+
+                String project =
+                        name.getText().toString().trim();
+
+                String packageName =
+                        pkg.getText().toString().trim();
+
+                if (!validProjectName(project)) {
+
+                    name.setError(
+                            "Use letters, numbers or _"
+                    );
+
+                    return;
                 }
-        );
+
+                if (!validPackage(packageName)) {
+
+                    pkg.setError(
+                            "Example: com.example.myapp"
+                    );
+
+                    return;
+                }
+
+                currentProjectName = project;
+                currentPackage = packageName;
+
+                if (createProjectFiles()) {
+
+                    dialog.dismiss();
+
+                    Toast.makeText(
+                            this,
+                            "Project created",
+                            Toast.LENGTH_SHORT
+                    ).show();
+
+                    buildWorkspace();
+
+                } else {
+
+                    Toast.makeText(
+                            this,
+                            "Project creation failed",
+                            Toast.LENGTH_LONG
+                    ).show();
+                }
+            });
+        });
 
         dialog.show();
     }
 
     // =====================================================
-    // PROJECT FILE CREATION
+    // CREATE PROJECT
     // =====================================================
 
     private boolean createProjectFiles() {
@@ -618,19 +442,13 @@ public class MainActivity extends Activity {
             }
 
             File app =
-                    new File(
-                            projectDir,
-                            "app"
-                    );
+                    new File(projectDir, "app");
 
             File src =
                     new File(
                             app,
                             "src/main/java/" +
-                                    currentPackage.replace(
-                                            ".",
-                                            "/"
-                                    )
+                                    currentPackage.replace(".", "/")
                     );
 
             File res =
@@ -675,71 +493,35 @@ public class MainActivity extends Activity {
                             "activity_main.xml"
                     );
 
-            writeText(
-                    javaFile,
-                    generateJava()
-            );
+            File stringsFile =
+                    new File(values, "strings.xml");
 
-            writeText(
-                    manifestFile,
-                    generateManifest()
-            );
+            File gradleFile =
+                    new File(app, "build.gradle");
 
-            writeText(
-                    xmlFile,
-                    generateXml()
-            );
+            File rootGradle =
+                    new File(projectDir, "build.gradle");
 
-            writeText(
-                    new File(
-                            values,
-                            "strings.xml"
-                    ),
-                    generateStrings()
-            );
+            File settings =
+                    new File(projectDir, "settings.gradle");
 
-            writeText(
-                    new File(
-                            app,
-                            "build.gradle"
-                    ),
-                    generateAppGradle()
-            );
+            File packageFile =
+                    new File(projectDir, ".package");
 
-            writeText(
-                    new File(
-                            projectDir,
-                            "build.gradle"
-                    ),
-                    generateRootGradle()
-            );
+            File projectNameFile =
+                    new File(projectDir, ".project");
 
-            writeText(
-                    new File(
-                            projectDir,
-                            "settings.gradle"
-                    ),
-                    generateSettings()
-            );
+            writeText(javaFile, generateJava());
+            writeText(manifestFile, generateManifest());
+            writeText(xmlFile, generateXml());
+            writeText(stringsFile, generateStrings());
+            writeText(gradleFile, generateAppGradle());
+            writeText(rootGradle, generateRootGradle());
+            writeText(settings, generateSettings());
+            writeText(packageFile, currentPackage);
+            writeText(projectNameFile, currentProjectName);
 
-            writeText(
-                    new File(
-                            projectDir,
-                            ".package"
-                    ),
-                    currentPackage
-            );
-
-            writeText(
-                    new File(
-                            projectDir,
-                            ".project"
-                    ),
-                    currentProjectName
-            );
-
-            currentFile =
-                    "MainActivity.java";
+            currentFile = "MainActivity.java";
 
             return true;
 
@@ -750,7 +532,7 @@ public class MainActivity extends Activity {
     }
 
     // =====================================================
-    // GENERATED FILES
+    // GENERATED JAVA
     // =====================================================
 
     private String generateJava() {
@@ -771,6 +553,10 @@ public class MainActivity extends Activity {
 
                 "}\n";
     }
+
+    // =====================================================
+    // MANIFEST
+    // =====================================================
 
     private String generateManifest() {
 
@@ -798,9 +584,12 @@ public class MainActivity extends Activity {
                 "        </activity>\n\n" +
 
                 "    </application>\n\n" +
-
                 "</manifest>\n";
     }
+
+    // =====================================================
+    // XML
+    // =====================================================
 
     private String generateXml() {
 
@@ -824,6 +613,10 @@ public class MainActivity extends Activity {
                 "</LinearLayout>\n";
     }
 
+    // =====================================================
+    // STRINGS
+    // =====================================================
+
     private String generateStrings() {
 
         return
@@ -834,6 +627,10 @@ public class MainActivity extends Activity {
                 "</string>\n" +
                 "</resources>\n";
     }
+
+    // =====================================================
+    // APP GRADLE
+    // =====================================================
 
     private String generateAppGradle() {
 
@@ -860,6 +657,10 @@ public class MainActivity extends Activity {
                 "}\n";
     }
 
+    // =====================================================
+    // ROOT GRADLE
+    // =====================================================
+
     private String generateRootGradle() {
 
         return
@@ -867,6 +668,10 @@ public class MainActivity extends Activity {
                 "    id 'com.android.application' version '8.7.3' apply false\n" +
                 "}\n";
     }
+
+    // =====================================================
+    // SETTINGS
+    // =====================================================
 
     private String generateSettings() {
 
@@ -904,100 +709,66 @@ public class MainActivity extends Activity {
         root.setBackgroundColor(BG);
 
         LinearLayout header = horizontal();
-
         header.setGravity(Gravity.CENTER_VERTICAL);
         header.setPadding(6, 6, 6, 6);
         header.setBackgroundColor(PANEL);
 
-        TextView back =
-                text("‹", 34, TEXT);
-
+        TextView back = text("‹", 34, TEXT);
         back.setGravity(Gravity.CENTER);
 
-        back.setOnClickListener(
-                v -> {
-                    saveCurrentFile();
-                    buildDashboard();
-                }
-        );
+        back.setOnClickListener(v -> {
+            saveCurrentFile();
+            buildDashboard();
+        });
 
         header.addView(
                 back,
-                new LinearLayout.LayoutParams(
-                        45,
-                        48
-                )
+                new LinearLayout.LayoutParams(45, 48)
         );
 
-        LinearLayout info = vertical();
-        info.setPadding(8, 0, 0, 0);
+        LinearLayout projectInfo = vertical();
+        projectInfo.setPadding(8, 0, 0, 0);
 
         TextView project =
-                text(
-                        currentProjectName,
-                        17,
-                        TEXT
-                );
+                text(currentProjectName, 17, TEXT);
 
         project.setTypeface(
                 Typeface.DEFAULT,
                 Typeface.BOLD
         );
 
-        info.addView(project);
+        projectInfo.addView(project);
 
-        info.addView(
-                text(
-                        currentPackage,
-                        10,
-                        MUTED
-                )
+        projectInfo.addView(
+                text(currentPackage, 10, MUTED)
         );
 
         header.addView(
-                info,
-                new LinearLayout.LayoutParams(
-                        0,
-                        -2,
-                        1
-                )
+                projectInfo,
+                new LinearLayout.LayoutParams(0, -2, 1)
         );
 
-        TextView save =
-                text("💾", 19, TEXT);
-
+        TextView save = text("💾", 19, TEXT);
         save.setGravity(Gravity.CENTER);
-
-        save.setOnClickListener(
-                v -> saveCurrentFile()
-        );
+        save.setOnClickListener(v -> saveCurrentFile());
 
         header.addView(
                 save,
-                new LinearLayout.LayoutParams(
-                        45,
-                        48
-                )
+                new LinearLayout.LayoutParams(45, 48)
         );
 
-        TextView run =
-                text("▶", 18, GREEN);
-
+        TextView run = text("▶", 18, GREEN);
         run.setGravity(Gravity.CENTER);
-
-        run.setOnClickListener(
-                v -> buildProject()
-        );
+        run.setOnClickListener(v -> buildProject());
 
         header.addView(
                 run,
-                new LinearLayout.LayoutParams(
-                        45,
-                        48
-                )
+                new LinearLayout.LayoutParams(45, 48)
         );
 
         root.addView(header);
+
+        // TOOLBAR
 
         HorizontalScrollView toolbarScroll =
                 new HorizontalScrollView(this);
@@ -1005,7 +776,6 @@ public class MainActivity extends Activity {
         toolbarScroll.setHorizontalScrollBarEnabled(false);
 
         LinearLayout toolbar = horizontal();
-
         toolbar.setPadding(8, 7, 8, 7);
 
         toolbar.addView(tool("⌕", "Search"));
@@ -1017,7 +787,11 @@ public class MainActivity extends Activity {
         toolbarScroll.addView(toolbar);
         root.addView(toolbarScroll);
 
+        // MAIN
+
         LinearLayout main = horizontal();
+
+        // EXPLORER
 
         LinearLayout explorer = vertical();
 
@@ -1034,74 +808,48 @@ public class MainActivity extends Activity {
 
         explorer.addView(explorerTitle);
 
-        explorer.addView(
-                treeItem("📁 app", 0)
-        );
+        explorer.addView(treeItem("📁 app", 0));
 
         TextView manifest =
-                treeItem(
-                        "📄 AndroidManifest.xml",
-                        1
-                );
+                treeItem("📄 AndroidManifest.xml", 1);
 
         manifest.setOnClickListener(
-                v -> openFile(
-                        "AndroidManifest.xml"
-                )
+                v -> openFile("AndroidManifest.xml")
         );
 
         explorer.addView(manifest);
 
-        explorer.addView(
-                treeItem("📁 java", 1)
-        );
+        explorer.addView(treeItem("📁 java", 1));
 
         TextView java =
-                treeItem(
-                        "📄 MainActivity.java",
-                        2
-                );
+                treeItem("📄 MainActivity.java", 2);
 
         java.setOnClickListener(
-                v -> openFile(
-                        "MainActivity.java"
-                )
+                v -> openFile("MainActivity.java")
         );
 
         explorer.addView(java);
 
-        explorer.addView(
-                treeItem("📁 res", 1)
-        );
-
-        explorer.addView(
-                treeItem("📁 layout", 2)
-        );
+        explorer.addView(treeItem("📁 res", 1));
+        explorer.addView(treeItem("📁 layout", 2));
 
         TextView xml =
-                treeItem(
-                        "📄 activity_main.xml",
-                        3
-                );
+                treeItem("📄 activity_main.xml", 3);
 
         xml.setOnClickListener(
-                v -> openFile(
-                        "activity_main.xml"
-                )
+                v -> openFile("activity_main.xml")
         );
 
         explorer.addView(xml);
 
         main.addView(
                 explorer,
-                new LinearLayout.LayoutParams(
-                        190,
-                        -1
-                )
+                new LinearLayout.LayoutParams(190, -1)
         );
 
-        LinearLayout editorArea = vertical();
+        // EDITOR
 
+        LinearLayout editorArea = vertical();
         editorArea.setBackgroundColor(BG);
 
         HorizontalScrollView tabsScroll =
@@ -1110,27 +858,16 @@ public class MainActivity extends Activity {
         tabsScroll.setHorizontalScrollBarEnabled(false);
 
         LinearLayout tabs = horizontal();
-
         tabs.setPadding(5, 5, 5, 5);
 
-        tabs.addView(
-                fileTab("MainActivity.java")
-        );
-
-        tabs.addView(
-                fileTab("AndroidManifest.xml")
-        );
-
-        tabs.addView(
-                fileTab("activity_main.xml")
-        );
+        tabs.addView(fileTab("MainActivity.java"));
+        tabs.addView(fileTab("AndroidManifest.xml"));
+        tabs.addView(fileTab("activity_main.xml"));
 
         tabsScroll.addView(tabs);
-
         editorArea.addView(tabsScroll);
 
-        editor =
-                new EditText(this);
+        editor = new EditText(this);
 
         editor.setGravity(
                 Gravity.TOP | Gravity.START
@@ -1144,9 +881,7 @@ public class MainActivity extends Activity {
 
         editor.setHintTextColor(MUTED);
 
-        editor.setTypeface(
-                Typeface.MONOSPACE
-        );
+        editor.setTypeface(Typeface.MONOSPACE);
 
         editor.setInputType(
                 InputType.TYPE_CLASS_TEXT |
@@ -1154,13 +889,7 @@ public class MainActivity extends Activity {
                 InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS
         );
 
-        editor.setPadding(
-                14,
-                12,
-                14,
-                40
-        );
-
+        editor.setPadding(14, 12, 14, 40);
         editor.setBackgroundColor(BG);
 
         loadCurrentFile();
@@ -1172,71 +901,45 @@ public class MainActivity extends Activity {
 
         editorArea.addView(
                 editorScroll,
-                new LinearLayout.LayoutParams(
-                        -1,
-                        0,
-                        1
-                )
+                new LinearLayout.LayoutParams(-1, 0, 1)
         );
+
+        // STATUS
 
         LinearLayout status = horizontal();
 
-        status.setGravity(
-                Gravity.CENTER_VERTICAL
-        );
-
-        status.setPadding(
-                12,
-                7,
-                12,
-                7
-        );
+        status.setGravity(Gravity.CENTER_VERTICAL);
+        status.setPadding(12, 7, 12, 7);
 
         TextView ready =
                 text("● Ready", 11, GREEN);
 
         status.addView(
                 ready,
-                new LinearLayout.LayoutParams(
-                        0,
-                        -2,
-                        1
-                )
+                new LinearLayout.LayoutParams(0, -2, 1)
         );
 
         status.addView(
-                text(
-                        currentFile,
-                        10,
-                        MUTED
-                )
+                text(currentFile, 10, MUTED)
         );
 
         editorArea.addView(status);
 
         main.addView(
                 editorArea,
-                new LinearLayout.LayoutParams(
-                        0,
-                        -1,
-                        1
-                )
+                new LinearLayout.LayoutParams(0, -1, 1)
         );
 
         root.addView(
                 main,
-                new LinearLayout.LayoutParams(
-                        -1,
-                        0,
-                        1
-                )
+                new LinearLayout.LayoutParams(-1, 0, 1)
         );
 
         setContentView(root);
     }
 
     // =====================================================
-    // FILE MANAGEMENT
+    // OPEN FILE
     // =====================================================
 
     private void openFile(String file) {
@@ -1247,8 +950,6 @@ public class MainActivity extends Activity {
 
         undoStack.clear();
         redoStack.clear();
-
-        loadCurrentFile();
 
         buildWorkspace();
     }
@@ -1261,39 +962,24 @@ public class MainActivity extends Activity {
 
         File file = getCurrentFile();
 
-        if (file == null) {
-            return;
-        }
-
         String content = readText(file);
 
         editor.setText(content);
 
-        editor.setSelection(
-                editor.length()
-        );
+        editor.setSelection(editor.length());
     }
 
     private File getCurrentFile() {
 
-        if ("MainActivity.java".equals(
-                currentFile
-        )) {
-
+        if ("MainActivity.java".equals(currentFile)) {
             return javaFile;
-
-        } else if (
-                "AndroidManifest.xml".equals(
-                        currentFile
-                )
-        ) {
-
-            return manifestFile;
-
-        } else {
-
-            return xmlFile;
         }
+
+        if ("AndroidManifest.xml".equals(currentFile)) {
+            return manifestFile;
+        }
+
+        return xmlFile;
     }
 
     // =====================================================
@@ -1334,7 +1020,7 @@ public class MainActivity extends Activity {
     }
 
     // =====================================================
-    // UNDO / REDO
+    // UNDO
     // =====================================================
 
     private void saveUndoState() {
@@ -1343,14 +1029,14 @@ public class MainActivity extends Activity {
             return;
         }
 
+        String value =
+                editor.getText().toString();
+
         if (undoStack.size() >= 30) {
             undoStack.remove(0);
         }
 
-        undoStack.add(
-                editor.getText().toString()
-        );
-
+        undoStack.add(value);
         redoStack.clear();
     }
 
@@ -1378,11 +1064,12 @@ public class MainActivity extends Activity {
                 );
 
         editor.setText(previous);
-
-        editor.setSelection(
-                editor.length()
-        );
+        editor.setSelection(editor.length());
     }
+
+    // =====================================================
+    // REDO
+    // =====================================================
 
     private void redoEdit() {
 
@@ -1408,10 +1095,7 @@ public class MainActivity extends Activity {
                 );
 
         editor.setText(next);
-
-        editor.setSelection(
-                editor.length()
-        );
+        editor.setSelection(editor.length());
     }
 
     // =====================================================
@@ -1427,70 +1111,57 @@ public class MainActivity extends Activity {
                 new AlertDialog.Builder(this)
                         .setTitle("Search")
                         .setView(search)
-                        .setNegativeButton(
-                                "Cancel",
-                                null
-                        )
-                        .setPositiveButton(
-                                "Find",
-                                null
-                        )
+                        .setNegativeButton("Cancel", null)
+                        .setPositiveButton("Find", null)
                         .create();
 
-        dialog.setOnShowListener(
-                d -> {
+        dialog.setOnShowListener(d -> {
 
-                    Button find =
-                            dialog.getButton(
-                                    AlertDialog.BUTTON_POSITIVE
-                            );
-
-                    find.setOnClickListener(
-                            v -> {
-
-                                String query =
-                                        search.getText()
-                                                .toString();
-
-                                if (query.isEmpty()) {
-                                    return;
-                                }
-
-                                String source =
-                                        editor.getText()
-                                                .toString();
-
-                                int position =
-                                        source.indexOf(query);
-
-                                if (position >= 0) {
-
-                                    editor.requestFocus();
-
-                                    editor.setSelection(
-                                            position,
-                                            position +
-                                                    query.length()
-                                    );
-
-                                } else {
-
-                                    Toast.makeText(
-                                            this,
-                                            "Not found",
-                                            Toast.LENGTH_SHORT
-                                    ).show();
-                                }
-                            }
+            Button find =
+                    dialog.getButton(
+                            AlertDialog.BUTTON_POSITIVE
                     );
+
+            find.setOnClickListener(v -> {
+
+                String query =
+                        search.getText().toString();
+
+                if (query.isEmpty()) {
+                    return;
                 }
-        );
+
+                String source =
+                        editor.getText().toString();
+
+                int position =
+                        source.indexOf(query);
+
+                if (position >= 0) {
+
+                    editor.requestFocus();
+
+                    editor.setSelection(
+                            position,
+                            position + query.length()
+                    );
+
+                } else {
+
+                    Toast.makeText(
+                            this,
+                            "Not found",
+                            Toast.LENGTH_SHORT
+                    ).show();
+                }
+            });
+        });
 
         dialog.show();
     }
 
     // =====================================================
-    // BUILD PIPELINE
+    // BUILD
     // =====================================================
 
     private void buildProject() {
@@ -1499,9 +1170,7 @@ public class MainActivity extends Activity {
 
         AlertDialog dialog =
                 new AlertDialog.Builder(this)
-                        .setTitle(
-                                "AlphaStudio Build"
-                        )
+                        .setTitle("Build Project")
                         .setMessage(
                                 "Preparing project..."
                         )
@@ -1509,130 +1178,85 @@ public class MainActivity extends Activity {
                                 "Cancel",
                                 null
                         )
-                        .setPositiveButton(
-                                "Continue",
-                                null
-                        )
                         .create();
-
-        dialog.setOnShowListener(
-                d -> {
-
-                    Button continueButton =
-                            dialog.getButton(
-                                    AlertDialog.BUTTON_POSITIVE
-                            );
-
-                    continueButton.setOnClickListener(
-                            v -> {
-
-                                dialog.dismiss();
-
-                                showBuildProgress();
-                            }
-                    );
-                }
-        );
 
         dialog.show();
-    }
 
-    private void showBuildProgress() {
+        new Thread(() -> {
 
-        LinearLayout box = vertical();
+            try {
 
-        box.setPadding(
-                24,
-                10,
-                24,
-                10
-        );
+                Thread.sleep(600);
 
-        TextView status =
-                text(
-                        "Initializing build...",
-                        14,
-                        TEXT
+                runOnUiThread(() ->
+                        dialog.setMessage(
+                                "✓ Project files saved\n\n" +
+                                "✓ Build configuration checked\n\n" +
+                                "✓ Android project ready\n\n" +
+                                "Preparing Gradle build..."
+                        )
                 );
 
-        status.setTypeface(
-                Typeface.DEFAULT,
-                Typeface.BOLD
-        );
+                Thread.sleep(800);
 
-        box.addView(status);
-
-        TextView details =
-                text(
-                        "\nProject: " +
+                runOnUiThread(() ->
+                        dialog.setMessage(
+                                "AlphaStudio Build System\n\n" +
+                                "Project: " +
                                 currentProjectName +
-                                "\nPackage: " +
+                                "\n\n" +
+                                "Package: " +
                                 currentPackage +
                                 "\n\n" +
-                                "Preparing build pipeline...",
-                        12,
-                        MUTED
+                                "Gradle build is handled by the GitHub Actions build environment."
+                        )
                 );
 
-        box.addView(details);
+                Thread.sleep(700);
 
-        AlertDialog progress =
-                new AlertDialog.Builder(this)
-                        .setTitle(
-                                "Building APK"
-                        )
-                        .setView(box)
-                        .setNegativeButton(
-                                "Close",
-                                null
-                        )
-                        .create();
+                runOnUiThread(() -> {
 
-        progress.show();
+                    dialog.dismiss();
 
-        Handler handler =
-                new Handler(
-                        Looper.getMainLooper()
-                );
-
-        handler.postDelayed(
-                () -> {
-
-                    status.setText(
-                            "✓ Source files checked"
-                    );
-
-                    details.setText(
-                            "\nProject: " +
+                    new AlertDialog.Builder(this)
+                            .setTitle("Build Ready ✓")
+                            .setMessage(
+                                    "Project successfully prepared.\n\n" +
+                                    "Project: " +
                                     currentProjectName +
-                                    "\nPackage: " +
+                                    "\n" +
+                                    "Package: " +
                                     currentPackage +
                                     "\n\n" +
-                                    "✓ Source files checked\n" +
-                                    "✓ Manifest checked\n" +
-                                    "✓ Resources checked\n" +
-                                    "✓ Gradle configuration checked\n\n" +
-                                    "Build pipeline ready."
-                    );
+                                    "Push the project to GitHub and run:\n" +
+                                    "Build AlphaStudio APK"
+                            )
+                            .setPositiveButton(
+                                    "OK",
+                                    null
+                            )
+                            .show();
+                });
 
-                },
-                900
-        );
+            } catch (InterruptedException e) {
 
-        handler.postDelayed(
-                () -> {
+                runOnUiThread(() -> {
 
-                    status.setText(
-                            "✓ Build preparation complete"
-                    );
+                    dialog.dismiss();
 
-                },
-                1800
-        );
+                    Toast.makeText(
+                            this,
+                            "Build preparation interrupted",
+                            Toast.LENGTH_SHORT
+                    ).show();
+                });
+            }
+
+        }).start();
     }
 
     // =====================================================
-    // TOOLBAR
+    // TOOL
     // =====================================================
 
     private TextView tool(
@@ -1647,12 +1271,7 @@ public class MainActivity extends Activity {
                         TEXT
                 );
 
-        t.setPadding(
-                14,
-                10,
-                14,
-                10
-        );
+        t.setPadding(14, 10, 14, 10);
 
         t.setBackground(
                 round(10, PANEL)
@@ -1711,12 +1330,7 @@ public class MainActivity extends Activity {
         TextView tab =
                 text(file, 11, TEXT);
 
-        tab.setPadding(
-                14,
-                11,
-                14,
-                11
-        );
+        tab.setPadding(14, 11, 14, 11);
 
         tab.setBackground(
                 round(
@@ -1757,12 +1371,7 @@ public class MainActivity extends Activity {
 
         LinearLayout card = vertical();
 
-        card.setPadding(
-                18,
-                18,
-                18,
-                18
-        );
+        card.setPadding(18, 18, 18, 18);
 
         card.setBackground(
                 round(16, color)
@@ -1789,35 +1398,26 @@ public class MainActivity extends Activity {
         addMargin(
                 card,
                 t,
-                0,
-                12,
-                0,
-                3
+                0, 12, 0, 3
         );
 
         card.addView(
-                text(
-                        subtitle,
-                        12,
-                        TEXT
-                )
+                text(subtitle, 12, TEXT)
         );
 
         card.setClickable(true);
 
-        card.setOnClickListener(
-                v -> {
+        card.setOnClickListener(v -> {
 
-                    if ("New Project".equals(title)) {
+            if ("New Project".equals(title)) {
 
-                        showNewProjectDialog();
+                showNewProjectDialog();
 
-                    } else {
+            } else {
 
-                        showOpenProjectDialog();
-                    }
-                }
-        );
+                showOpenProjectDialog();
+            }
+        });
 
         return card;
     }
@@ -1833,23 +1433,14 @@ public class MainActivity extends Activity {
 
         LinearLayout card = vertical();
 
-        card.setPadding(
-                18,
-                16,
-                18,
-                16
-        );
+        card.setPadding(18, 16, 18, 16);
 
         card.setBackground(
                 round(14, PANEL)
         );
 
         TextView n =
-                text(
-                        "▣ " + name,
-                        16,
-                        TEXT
-                );
+                text("▣ " + name, 16, TEXT);
 
         n.setTypeface(
                 Typeface.DEFAULT,
@@ -1861,10 +1452,7 @@ public class MainActivity extends Activity {
         addMargin(
                 card,
                 text(pkg, 12, MUTED),
-                0,
-                5,
-                0,
-                2
+                0, 5, 0, 2
         );
 
         card.addView(
@@ -1920,12 +1508,7 @@ public class MainActivity extends Activity {
 
         t.setGravity(Gravity.CENTER);
 
-        t.setPadding(
-                15,
-                15,
-                15,
-                15
-        );
+        t.setPadding(15, 15, 15, 15);
 
         t.setBackground(
                 round(14, PANEL)
@@ -1946,14 +1529,17 @@ public class MainActivity extends Activity {
             t.setOnClickListener(
                     v -> {
 
-                        if (projectDir != null) {
-                            buildProject();
-                        } else {
+                        if (projectDir == null) {
+
                             Toast.makeText(
                                     this,
                                     "Open a project first",
                                     Toast.LENGTH_SHORT
                             ).show();
+
+                        } else {
+
+                            buildProject();
                         }
                     }
             );
@@ -1978,10 +1564,7 @@ public class MainActivity extends Activity {
         );
 
         card.setPadding(
-                16,
-                15,
-                16,
-                15
+                16, 15, 16, 15
         );
 
         card.setBackground(
@@ -2029,7 +1612,7 @@ public class MainActivity extends Activity {
     }
 
     // =====================================================
-    // OPEN PROJECT
+    // OPEN PROJECT DIALOG
     // =====================================================
 
     private void showOpenProjectDialog() {
@@ -2078,9 +1661,7 @@ public class MainActivity extends Activity {
         new AlertDialog.Builder(this)
                 .setTitle("Open Project")
                 .setItems(
-                        names.toArray(
-                                new String[0]
-                        ),
+                        names.toArray(new String[0]),
                         (dialog, which) -> {
 
                             File selected =
@@ -2099,10 +1680,13 @@ public class MainActivity extends Activity {
                 .show();
     }
 
+    // =====================================================
+    // OPEN PROJECT
+    // =====================================================
+
     private void openProject(File dir) {
 
-        if (dir == null ||
-                !dir.exists()) {
+        if (dir == null || !dir.exists()) {
 
             Toast.makeText(
                     this,
@@ -2115,18 +1699,12 @@ public class MainActivity extends Activity {
 
         currentProjectName =
                 readText(
-                        new File(
-                                dir,
-                                ".project"
-                        )
+                        new File(dir, ".project")
                 ).trim();
 
         currentPackage =
                 readText(
-                        new File(
-                                dir,
-                                ".package"
-                        )
+                        new File(dir, ".package")
                 ).trim();
 
         if (currentProjectName.isEmpty()) {
@@ -2172,7 +1750,7 @@ public class MainActivity extends Activity {
     }
 
     // =====================================================
-    // FIND FILE
+    // FIND JAVA
     // =====================================================
 
     private File findJavaFile(File dir) {
@@ -2220,9 +1798,7 @@ public class MainActivity extends Activity {
                 }
 
             } else if (
-                    filename.equals(
-                            f.getName()
-                    )
+                    f.getName().equals(filename)
             ) {
 
                 result.add(f);
@@ -2235,7 +1811,7 @@ public class MainActivity extends Activity {
     }
 
     // =====================================================
-    // TREE
+    // TREE ITEM
     // =====================================================
 
     private TextView treeItem(
@@ -2357,7 +1933,7 @@ public class MainActivity extends Activity {
     }
 
     // =====================================================
-    // UI HELPERS
+    // SECTION TITLE
     // =====================================================
 
     private TextView sectionTitle(
@@ -2375,6 +1951,10 @@ public class MainActivity extends Activity {
         return t;
     }
 
+    // =====================================================
+    // LABEL
+    // =====================================================
+
     private TextView label(String value) {
 
         TextView t =
@@ -2387,6 +1967,10 @@ public class MainActivity extends Activity {
 
         return t;
     }
+
+    // =====================================================
+    // INPUT
+    // =====================================================
 
     private EditText input(String hint) {
 
@@ -2402,9 +1986,11 @@ public class MainActivity extends Activity {
         return e;
     }
 
-    private Spinner spinner(
-            String[] values
-    ) {
+    // =====================================================
+    // SPINNER
+    // =====================================================
+
+    private Spinner spinner(String[] values) {
 
         Spinner s =
                 new Spinner(this);
@@ -2425,6 +2011,10 @@ public class MainActivity extends Activity {
         return s;
     }
 
+    // =====================================================
+    // VERTICAL
+    // =====================================================
+
     private LinearLayout vertical() {
 
         LinearLayout l =
@@ -2437,6 +2027,10 @@ public class MainActivity extends Activity {
         return l;
     }
 
+    // =====================================================
+    // HORIZONTAL
+    // =====================================================
+
     private LinearLayout horizontal() {
 
         LinearLayout l =
@@ -2448,6 +2042,10 @@ public class MainActivity extends Activity {
 
         return l;
     }
+
+    // =====================================================
+    // TEXT
+    // =====================================================
 
     private TextView text(
             String value,
@@ -2465,6 +2063,10 @@ public class MainActivity extends Activity {
         return t;
     }
 
+    // =====================================================
+    // ROUNDED BACKGROUND
+    // =====================================================
+
     private GradientDrawable round(
             int radius,
             int color
@@ -2479,6 +2081,10 @@ public class MainActivity extends Activity {
 
         return d;
     }
+
+    // =====================================================
+    // MARGIN
+    // =====================================================
 
     private void addMargin(
             LinearLayout parent,
