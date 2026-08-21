@@ -2,6 +2,8 @@ package com.alphastudio;
 
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
 import android.graphics.Color;
 import android.graphics.Typeface;
@@ -23,7 +25,12 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.OutputStream;
 import java.io.IOException;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 import java.util.ArrayList;
 
 public class MainActivity extends Activity {
@@ -43,6 +50,8 @@ public class MainActivity extends Activity {
 
     private File projectDir, javaFile, manifestFile, xmlFile;
     private EditText editor;
+    private static final int EXPORT_REQUEST = 4201;
+    private File pendingExportZip;
 
     private final ArrayList<String> undoStack = new ArrayList<>();
     private final ArrayList<String> redoStack = new ArrayList<>();
@@ -377,6 +386,7 @@ public class MainActivity extends Activity {
         toolbar.addView(tool("↷","Redo"));
         toolbar.addView(tool("SAVE","Save"));
         toolbar.addView(tool("▶","Build"));
+        toolbar.addView(tool("⇧","Export"));
         toolbarScroll.addView(toolbar);
         root.addView(toolbarScroll);
 
@@ -537,6 +547,210 @@ public class MainActivity extends Activity {
                 .show();
     }
 
+    // =====================================================
+    // PROJECT EXPORT
+    // =====================================================
+
+    private void exportProject() {
+        saveCurrentFile();
+
+        if (projectDir == null || !projectDir.exists()) {
+            Toast.makeText(this, "Open a project first", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        try {
+            File exportDir = new File(getCacheDir(), "exports");
+            if (!exportDir.exists() && !exportDir.mkdirs()) {
+                throw new IOException("Cannot create export folder");
+            }
+
+            pendingExportZip = new File(
+                    exportDir,
+                    safeFileName(currentProjectName) + ".zip"
+            );
+
+            if (pendingExportZip.exists() && !pendingExportZip.delete()) {
+                throw new IOException("Cannot replace old export");
+            }
+
+            zipDirectory(projectDir, pendingExportZip);
+
+            Intent intent = new Intent(Intent.ACTION_CREATE_DOCUMENT);
+            intent.addCategory(Intent.CATEGORY_OPENABLE);
+            intent.setType("application/zip");
+            intent.putExtra(
+                    Intent.EXTRA_TITLE,
+                    safeFileName(currentProjectName) + ".zip"
+            );
+            startActivityForResult(intent, EXPORT_REQUEST);
+
+        } catch (Exception e) {
+            Toast.makeText(
+                    this,
+                    "Export failed: " + e.getMessage(),
+                    Toast.LENGTH_LONG
+            ).show();
+        }
+    }
+
+    private String safeFileName(String value) {
+        if (value == null || value.trim().isEmpty()) {
+            return "AlphaStudioProject";
+        }
+
+        return value.trim().replaceAll("[^A-Za-z0-9._-]", "_");
+    }
+
+    private void zipDirectory(File sourceDir, File zipFile) throws IOException {
+        FileOutputStream fos = new FileOutputStream(zipFile);
+        ZipOutputStream zos = new ZipOutputStream(fos);
+
+        try {
+            String rootName = sourceDir.getName();
+            zipRecursive(sourceDir, rootName + "/", zos);
+        } finally {
+            try {
+                zos.close();
+            } catch (IOException ignored) {
+            }
+        }
+    }
+
+    private void zipRecursive(
+            File file,
+            String zipPath,
+            ZipOutputStream zos
+    ) throws IOException {
+
+        if (file.isDirectory()) {
+            File[] children = file.listFiles();
+
+            if (children == null) {
+                return;
+            }
+
+            if (children.length == 0) {
+                zos.putNextEntry(new ZipEntry(zipPath));
+                zos.closeEntry();
+                return;
+            }
+
+            for (File child : children) {
+                zipRecursive(
+                        child,
+                        zipPath + child.getName() +
+                                (child.isDirectory() ? "/" : ""),
+                        zos
+                );
+            }
+
+            return;
+        }
+
+        FileInputStream input = new FileInputStream(file);
+
+        try {
+            ZipEntry entry = new ZipEntry(zipPath);
+            zos.putNextEntry(entry);
+
+            byte[] buffer = new byte[8192];
+            int count;
+
+            while ((count = input.read(buffer)) != -1) {
+                zos.write(buffer, 0, count);
+            }
+
+            zos.closeEntry();
+
+        } finally {
+            input.close();
+        }
+    }
+
+    @Override
+    protected void onActivityResult(
+            int requestCode,
+            int resultCode,
+            Intent data
+    ) {
+        super.onActivityResult(requestCode, resultCode, data);
+
+        if (requestCode != EXPORT_REQUEST) {
+            return;
+        }
+
+        if (resultCode != RESULT_OK ||
+                data == null ||
+                data.getData() == null) {
+
+            pendingExportZip = null;
+            Toast.makeText(
+                    this,
+                    "Export cancelled",
+                    Toast.LENGTH_SHORT
+            ).show();
+            return;
+        }
+
+        if (pendingExportZip == null ||
+                !pendingExportZip.exists()) {
+
+            Toast.makeText(
+                    this,
+                    "Export file not found",
+                    Toast.LENGTH_LONG
+            ).show();
+            return;
+        }
+
+        Uri destination = data.getData();
+
+        try {
+            OutputStream output =
+                    getContentResolver().openOutputStream(destination);
+
+            if (output == null) {
+                throw new IOException("Cannot open destination");
+            }
+
+            FileInputStream input =
+                    new FileInputStream(pendingExportZip);
+
+            try {
+                byte[] buffer = new byte[8192];
+                int count;
+
+                while ((count = input.read(buffer)) != -1) {
+                    output.write(buffer, 0, count);
+                }
+
+                output.flush();
+
+            } finally {
+                input.close();
+                output.close();
+            }
+
+            Toast.makeText(
+                    this,
+                    "Project exported successfully",
+                    Toast.LENGTH_LONG
+            ).show();
+
+        } catch (Exception e) {
+
+            Toast.makeText(
+                    this,
+                    "Export failed: " + e.getMessage(),
+                    Toast.LENGTH_LONG
+            ).show();
+
+        } finally {
+            pendingExportZip = null;
+        }
+    }
+
     private TextView tool(String icon,String title) {
         TextView t = text(icon+"  "+title,12,TEXT);
         t.setPadding(14,10,14,10);
@@ -550,6 +764,7 @@ public class MainActivity extends Activity {
         else if ("Redo".equals(title)) t.setOnClickListener(v -> redoEdit());
         else if ("Save".equals(title)) t.setOnClickListener(v -> saveCurrentFile());
         else if ("Build".equals(title)) t.setOnClickListener(v -> buildProject());
+        else if ("Export".equals(title)) t.setOnClickListener(v -> exportProject());
         return t;
     }
 
